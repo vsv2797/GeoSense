@@ -1,30 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ClimateRisk.live — Global Climate Intelligence</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ClimateRisk.live</title>
+<script src="//unpkg.com/globe.gl"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#04080f}
+body{font-family:'Syne',system-ui,sans-serif;color:#e2eaf4}
+#app{display:flex;flex-direction:column;height:100vh}
 
-  <!-- ─── STYLES ─── -->
-  <link rel="stylesheet" href="css/reset.css" />
-  <link rel="stylesheet" href="css/theme.css" />
-  <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/animations.css" />
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:rgba(4,8,15,0.96);border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{font-size:22px}
+.logo-name{font-size:16px;font-weight:800;letter-spacing:-0.5px}
+.logo-name span{color:#00e5ff}
+.logo-tag{font-family:'JetBrains Mono',monospace;font-size:8px;color:#1a2a3a;letter-spacing:2px;margin-top:1px}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.22);border-radius:100px;padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#00ff88;letter-spacing:1px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#00ff88;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.15}}
+
+/* MAIN */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* LEFT PANEL */
+#left{width:192px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.05);background:rgba(4,8,15,0.92);padding:12px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+.slabel{font-family:'JetBrains Mono',monospace;font-size:8px;color:#1a2a3a;letter-spacing:2px;margin-bottom:8px;padding-left:2px}
+.idx-btn{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border-radius:10px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);cursor:pointer;color:#e2eaf4;text-align:left;transition:all 0.2s}
+.idx-btn:hover{background:rgba(255,255,255,0.05)}
+.idx-btn.active{transform:translateX(4px)}
+.idx-icon{font-size:17px;width:20px;text-align:center;flex-shrink:0}
+.idx-inf{flex:1;min-width:0}
+.idx-lbl{font-size:11px;font-weight:700}
+.idx-avg{font-family:'JetBrains Mono',monospace;font-size:8px;color:#334455;margin-top:1px}
+.idx-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;flex-shrink:0}
+.divider{height:1px;background:rgba(255,255,255,0.05);margin:8px 0;flex-shrink:0}
+.top-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background 0.15s}
+.top-row:hover{background:rgba(255,255,255,0.06)}
+.top-rank{font-size:9px;color:#223344;font-family:'JetBrains Mono',monospace;width:16px;flex-shrink:0}
+.top-flag{font-size:13px;flex-shrink:0}
+.top-name{flex:1;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top-score{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0}
+.stats-box{padding:10px;border-radius:10px;background:rgba(255,34,68,0.06);border:1px solid rgba(255,34,68,0.14);margin-top:4px}
+.stats-ttl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#ff3355;letter-spacing:1px;margin-bottom:6px}
+.stats-row{font-size:11px;color:#445566;margin-bottom:2px}
+.stats-row b{color:#e2eaf4}
+.stats-row b.d{color:#ff3355}
+.stats-row b.w{color:#ff8c00}
+
+/* GLOBE WRAP */
+#globe-wrap{flex:1;position:relative;overflow:hidden;background:#04080f}
+#globe-viz{width:100%;height:100%;display:block;cursor:crosshair}
+
+/* OVERLAYS */
+#metric-badge{position:absolute;top:12px;right:12px;background:rgba(4,8,15,0.9);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:6px 12px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;pointer-events:none}
+#legend{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(4,8,15,0.88);border:1px solid rgba(255,255,255,0.07);border-radius:100px;padding:8px 18px;pointer-events:none}
+.leg-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:#334455;letter-spacing:1px}
+.leg-bar{width:120px;height:7px;border-radius:100px;background:linear-gradient(90deg,#00ddff,#44ee88,#ccdd00,#ffaa00,#ff6600,#ff2244)}
+#hint{position:absolute;bottom:14px;left:14px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#1a2a3a;letter-spacing:1px;pointer-events:none}
+
+/* TOOLTIP */
+#tooltip{position:fixed;background:rgba(4,8,15,0.96);border:1px solid rgba(0,229,255,0.28);border-radius:10px;padding:9px 13px;pointer-events:none;display:none;z-index:1000}
+.tip-inner{display:flex;align-items:center;gap:9px}
+.tip-flag{font-size:20px}
+.tip-name{font-weight:700;font-size:13px}
+.tip-score{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:2px}
+
+/* RIGHT PANEL */
+#right{width:0;flex-shrink:0;border-left:1px solid rgba(255,255,255,0.05);background:rgba(4,8,15,0.94);overflow:hidden;transition:width 0.35s cubic-bezier(0.22,1,0.36,1)}
+#right.open{width:215px}
+#right-inner{width:215px;padding:16px;overflow-y:auto;height:100%}
+.det-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.det-flag{font-size:40px}
+.close-btn{font-size:22px;color:#334455;cursor:pointer;background:none;border:none;padding:2px 4px;transition:color 0.2s}
+.close-btn:hover{color:#e2eaf4}
+.det-name{font-size:17px;font-weight:800;letter-spacing:-0.5px;margin-bottom:2px}
+.det-iso{font-family:'JetBrains Mono',monospace;font-size:9px;color:#223344;letter-spacing:1px;margin-bottom:14px}
+.score-blk{display:flex;align-items:flex-end;gap:5px;margin-bottom:3px}
+.det-score{font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;line-height:1}
+.score-den{font-family:'JetBrains Mono',monospace;font-size:13px;color:#334455;margin-bottom:7px}
+.det-risk{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;margin-bottom:4px}
+.det-trend{font-family:'JetBrains Mono',monospace;font-size:10px;margin-bottom:16px}
+.mrow{margin-bottom:11px}
+.mhdr{display:flex;justify-content:space-between;margin-bottom:3px}
+.mname{font-size:10px;color:#445566}
+.mval{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700}
+.btrack{height:3px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden}
+.bfill{height:100%;border-radius:2px;transition:width 0.7s cubic-bezier(0.22,1,0.36,1)}
+.rank-box{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.12)}
+.rank-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#00e5ff;letter-spacing:2px;margin-bottom:4px}
+.rank-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:#00e5ff;line-height:1.1}
+.rank-of{font-size:10px;color:#223344;margin-top:2px}
+.spark-wrap{margin-top:14px}
+#spark-canvas{display:block;border-radius:6px;background:rgba(255,255,255,0.02);margin-top:6px}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#00e5ff22;border-radius:2px}
+</style>
 </head>
 <body>
-
 <div id="app">
-
-  <!-- ════════════════════════════════════
-       HEADER
-  ════════════════════════════════════ -->
-  <header id="header">
+  <header>
     <div class="logo">
-      <div class="logo-icon">🌍</div>
-      <div class="logo-text">
-        <div class="logo-name">ClimateRisk<span class="accent">.live</span></div>
-        <div class="logo-sub">GLOBAL CLIMATE INTELLIGENCE</div>
+      <div class="logo-mark">🌍</div>
+      <div>
+        <div class="logo-name">ClimateRisk<span>.live</span></div>
+        <div class="logo-tag">GLOBAL CLIMATE INTELLIGENCE</div>
       </div>
     </div>
     <div class="live-pill">
@@ -33,104 +118,65 @@
     </div>
   </header>
 
-  <!-- ════════════════════════════════════
-       MAIN CONTENT
-  ════════════════════════════════════ -->
-  <main id="main">
-
-    <!-- ── LEFT PANEL ── -->
-    <aside id="left-panel">
-
-      <div class="panel-section">
-        <div class="section-label">SELECT INDEX</div>
-        <div id="metric-buttons">
-          <!-- Injected by ui.js -->
-        </div>
+  <div id="main">
+    <aside id="left">
+      <div class="slabel">SELECT INDEX</div>
+      <div id="metric-btns"></div>
+      <div class="divider"></div>
+      <div class="slabel">TOP RISK</div>
+      <div id="top-list"></div>
+      <div class="divider"></div>
+      <div class="stats-box">
+        <div class="stats-ttl">GLOBAL STATS</div>
+        <div class="stats-row">Avg: <b id="s-avg">--</b></div>
+        <div class="stats-row">Extreme: <b id="s-ext" class="d">--</b></div>
+        <div class="stats-row">Severe+: <b id="s-sev" class="w">--</b></div>
       </div>
-
-      <div class="panel-divider"></div>
-
-      <div class="panel-section">
-        <div class="section-label">TOP RISK COUNTRIES</div>
-        <div id="top-list">
-          <!-- Injected by ui.js -->
-        </div>
-      </div>
-
-      <div class="panel-divider"></div>
-
-      <div class="panel-section">
-        <div class="stats-box">
-          <div class="stats-title">GLOBAL STATS</div>
-          <div class="stats-row">Avg score: <b id="stat-avg">--</b></div>
-          <div class="stats-row">Extreme risk: <b id="stat-extreme" class="danger">--</b> countries</div>
-          <div class="stats-row">Severe+: <b id="stat-severe" class="warning">--</b> countries</div>
-        </div>
-      </div>
-
     </aside>
 
-    <!-- ── GLOBE CANVAS ── -->
     <section id="globe-wrap">
-      <canvas id="globe"></canvas>
-
-      <!-- Overlays -->
-      <div id="metric-badge" class="badge"></div>
-
+      <div id="globe-viz"></div>
+      <div id="metric-badge"></div>
       <div id="legend">
-        <span class="leg-label">LOW</span>
-        <div class="leg-gradient"></div>
-        <span class="leg-label">EXTREME</span>
+        <span class="leg-lbl">LOW</span>
+        <div class="leg-bar"></div>
+        <span class="leg-lbl">EXTREME</span>
       </div>
-
-      <div id="hint" class="hint-text">↻ Drag to rotate · Click a country · Scroll to zoom</div>
+      <div id="hint">↻ Drag · Scroll to zoom · Click country</div>
     </section>
 
-    <!-- ── RIGHT DETAIL PANEL ── -->
-    <aside id="right-panel">
+    <aside id="right">
       <div id="right-inner">
-
-        <div class="detail-header">
-          <div id="d-flag" class="detail-flag">🌍</div>
-          <button id="close-btn" class="close-btn" aria-label="Close">×</button>
+        <div class="det-hdr">
+          <div id="d-flag" class="det-flag">🌍</div>
+          <button class="close-btn" id="close-btn">×</button>
         </div>
-
-        <div id="d-name" class="detail-name"></div>
-        <div id="d-iso" class="detail-iso"></div>
-
-        <div class="score-block">
-          <div id="d-score" class="detail-score"></div>
-          <div class="score-denom">/100</div>
+        <div id="d-name" class="det-name"></div>
+        <div id="d-iso" class="det-iso"></div>
+        <div class="score-blk">
+          <div id="d-score" class="det-score"></div>
+          <div class="score-den">/100</div>
         </div>
-        <div id="d-risk" class="detail-risk-label"></div>
-        <div id="d-trend" class="detail-trend"></div>
-
-        <div class="section-label" style="margin-top:16px">ALL METRICS</div>
-        <div id="d-metrics">
-          <!-- Injected by ui.js -->
-        </div>
-
+        <div id="d-risk" class="det-risk"></div>
+        <div id="d-trend" class="det-trend"></div>
+        <div class="slabel" style="margin-top:14px">ALL METRICS</div>
+        <div id="d-metrics"></div>
         <div class="rank-box">
-          <div class="rank-label">GLOBAL RANK</div>
+          <div class="rank-lbl">GLOBAL RANK</div>
           <div id="d-rank" class="rank-num"></div>
           <div id="d-rankof" class="rank-of"></div>
         </div>
-
-        <div class="compare-section">
-          <div class="section-label" style="margin-top:16px">HISTORICAL TREND</div>
-          <canvas id="spark-canvas" width="178" height="60"></canvas>
+        <div class="spark-wrap">
+          <div class="slabel">90-DAY TREND</div>
+          <canvas id="spark-canvas" width="178" height="55"></canvas>
         </div>
-
       </div>
     </aside>
-
-  </main>
-
+  </div>
 </div>
 
-<!-- ─── TOOLTIP ─── -->
-<div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true">
-  <div class="tooltip-inner">
+<div id="tooltip">
+  <div class="tip-inner">
     <div id="t-flag" class="tip-flag"></div>
     <div>
       <div id="t-name" class="tip-name"></div>
@@ -139,14 +185,262 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════
-     SCRIPTS  (order matters)
-════════════════════════════════════ -->
-<script src="js/data.js"></script>       <!-- country list, metric definitions        -->
-<script src="js/engine.js"></script>     <!-- math: rotation, projection, scoring     -->
-<script src="js/globe.js"></script>      <!-- canvas renderer                         -->
-<script src="js/ui.js"></script>         <!-- DOM builders, panel updates, events     -->
-<script src="js/main.js"></script>       <!-- bootstrap: wires everything together    -->
+<script>
+/* ═══════════════ DATA ═══════════════ */
+const COUNTRIES=[
+  {iso:"PAK",name:"Pakistan",      flag:"🇵🇰",cont:"Asia",      lat:30,  lng:70  },
+  {iso:"IND",name:"India",         flag:"🇮🇳",cont:"Asia",      lat:20,  lng:80  },
+  {iso:"IRN",name:"Iran",          flag:"🇮🇷",cont:"Asia",      lat:32,  lng:53  },
+  {iso:"SAU",name:"Saudi Arabia",  flag:"🇸🇦",cont:"Asia",      lat:24,  lng:45  },
+  {iso:"IRQ",name:"Iraq",          flag:"🇮🇶",cont:"Asia",      lat:33,  lng:44  },
+  {iso:"ARE",name:"UAE",           flag:"🇦🇪",cont:"Asia",      lat:24,  lng:54  },
+  {iso:"YEM",name:"Yemen",         flag:"🇾🇪",cont:"Asia",      lat:15,  lng:48  },
+  {iso:"AFG",name:"Afghanistan",   flag:"🇦🇫",cont:"Asia",      lat:33,  lng:65  },
+  {iso:"SYR",name:"Syria",         flag:"🇸🇾",cont:"Asia",      lat:35,  lng:38  },
+  {iso:"BGD",name:"Bangladesh",    flag:"🇧🇩",cont:"Asia",      lat:24,  lng:90  },
+  {iso:"MMR",name:"Myanmar",       flag:"🇲🇲",cont:"Asia",      lat:17,  lng:96  },
+  {iso:"THA",name:"Thailand",      flag:"🇹🇭",cont:"Asia",      lat:15,  lng:101 },
+  {iso:"VNM",name:"Vietnam",       flag:"🇻🇳",cont:"Asia",      lat:14,  lng:108 },
+  {iso:"PHL",name:"Philippines",   flag:"🇵🇭",cont:"Asia",      lat:13,  lng:122 },
+  {iso:"IDN",name:"Indonesia",     flag:"🇮🇩",cont:"Asia",      lat:-5,  lng:120 },
+  {iso:"CHN",name:"China",         flag:"🇨🇳",cont:"Asia",      lat:35,  lng:105 },
+  {iso:"JPN",name:"Japan",         flag:"🇯🇵",cont:"Asia",      lat:36,  lng:138 },
+  {iso:"KOR",name:"South Korea",   flag:"🇰🇷",cont:"Asia",      lat:37,  lng:128 },
+  {iso:"KAZ",name:"Kazakhstan",    flag:"🇰🇿",cont:"Asia",      lat:48,  lng:68  },
+  {iso:"MNG",name:"Mongolia",      flag:"🇲🇳",cont:"Asia",      lat:46,  lng:105 },
+  {iso:"UZB",name:"Uzbekistan",    flag:"🇺🇿",cont:"Asia",      lat:41,  lng:64  },
+  {iso:"NPL",name:"Nepal",         flag:"🇳🇵",cont:"Asia",      lat:28,  lng:84  },
+  {iso:"LKA",name:"Sri Lanka",     flag:"🇱🇰",cont:"Asia",      lat:7,   lng:81  },
+  {iso:"RUS",name:"Russia",        flag:"🇷🇺",cont:"Europe",    lat:61,  lng:105 },
+  {iso:"TUR",name:"Turkey",        flag:"🇹🇷",cont:"Europe",    lat:39,  lng:35  },
+  {iso:"GRC",name:"Greece",        flag:"🇬🇷",cont:"Europe",    lat:39,  lng:22  },
+  {iso:"ITA",name:"Italy",         flag:"🇮🇹",cont:"Europe",    lat:42,  lng:12  },
+  {iso:"ESP",name:"Spain",         flag:"🇪🇸",cont:"Europe",    lat:40,  lng:-4  },
+  {iso:"PRT",name:"Portugal",      flag:"🇵🇹",cont:"Europe",    lat:39,  lng:-8  },
+  {iso:"FRA",name:"France",        flag:"🇫🇷",cont:"Europe",    lat:46,  lng:2   },
+  {iso:"DEU",name:"Germany",       flag:"🇩🇪",cont:"Europe",    lat:51,  lng:10  },
+  {iso:"GBR",name:"UK",            flag:"🇬🇧",cont:"Europe",    lat:54,  lng:-2  },
+  {iso:"NOR",name:"Norway",        flag:"🇳🇴",cont:"Europe",    lat:65,  lng:13  },
+  {iso:"SWE",name:"Sweden",        flag:"🇸🇪",cont:"Europe",    lat:60,  lng:15  },
+  {iso:"POL",name:"Poland",        flag:"🇵🇱",cont:"Europe",    lat:52,  lng:20  },
+  {iso:"UKR",name:"Ukraine",       flag:"🇺🇦",cont:"Europe",    lat:49,  lng:32  },
+  {iso:"SOM",name:"Somalia",       flag:"🇸🇴",cont:"Africa",    lat:6,   lng:46  },
+  {iso:"ETH",name:"Ethiopia",      flag:"🇪🇹",cont:"Africa",    lat:9,   lng:40  },
+  {iso:"SDN",name:"Sudan",         flag:"🇸🇩",cont:"Africa",    lat:15,  lng:30  },
+  {iso:"NER",name:"Niger",         flag:"🇳🇪",cont:"Africa",    lat:17,  lng:8   },
+  {iso:"MLI",name:"Mali",          flag:"🇲🇱",cont:"Africa",    lat:17,  lng:-4  },
+  {iso:"TCD",name:"Chad",          flag:"🇹🇩",cont:"Africa",    lat:15,  lng:19  },
+  {iso:"DZA",name:"Algeria",       flag:"🇩🇿",cont:"Africa",    lat:28,  lng:3   },
+  {iso:"EGY",name:"Egypt",         flag:"🇪🇬",cont:"Africa",    lat:26,  lng:30  },
+  {iso:"NGA",name:"Nigeria",       flag:"🇳🇬",cont:"Africa",    lat:10,  lng:8   },
+  {iso:"KEN",name:"Kenya",         flag:"🇰🇪",cont:"Africa",    lat:1,   lng:38  },
+  {iso:"COD",name:"DR Congo",      flag:"🇨🇩",cont:"Africa",    lat:-4,  lng:24  },
+  {iso:"ZAF",name:"South Africa",  flag:"🇿🇦",cont:"Africa",    lat:-29, lng:25  },
+  {iso:"MDG",name:"Madagascar",    flag:"🇲🇬",cont:"Africa",    lat:-20, lng:47  },
+  {iso:"MOZ",name:"Mozambique",    flag:"🇲🇿",cont:"Africa",    lat:-18, lng:35  },
+  {iso:"NAM",name:"Namibia",       flag:"🇳🇦",cont:"Africa",    lat:-22, lng:18  },
+  {iso:"GHA",name:"Ghana",         flag:"🇬🇭",cont:"Africa",    lat:8,   lng:-1  },
+  {iso:"CMR",name:"Cameroon",      flag:"🇨🇲",cont:"Africa",    lat:6,   lng:12  },
+  {iso:"AGO",name:"Angola",        flag:"🇦🇴",cont:"Africa",    lat:-12, lng:18  },
+  {iso:"AUS",name:"Australia",     flag:"🇦🇺",cont:"Oceania",   lat:-25, lng:133 },
+  {iso:"NZL",name:"New Zealand",   flag:"🇳🇿",cont:"Oceania",   lat:-41, lng:174 },
+  {iso:"PNG",name:"Papua N.Guinea",flag:"🇵🇬",cont:"Oceania",   lat:-6,  lng:144 },
+  {iso:"BRA",name:"Brazil",        flag:"🇧🇷",cont:"S.America", lat:-14, lng:-51 },
+  {iso:"ARG",name:"Argentina",     flag:"🇦🇷",cont:"S.America", lat:-34, lng:-64 },
+  {iso:"CHL",name:"Chile",         flag:"🇨🇱",cont:"S.America", lat:-30, lng:-71 },
+  {iso:"COL",name:"Colombia",      flag:"🇨🇴",cont:"S.America", lat:4,   lng:-74 },
+  {iso:"PER",name:"Peru",          flag:"🇵🇪",cont:"S.America", lat:-9,  lng:-75 },
+  {iso:"VEN",name:"Venezuela",     flag:"🇻🇪",cont:"S.America", lat:8,   lng:-66 },
+  {iso:"BOL",name:"Bolivia",       flag:"🇧🇴",cont:"S.America", lat:-17, lng:-65 },
+  {iso:"PRY",name:"Paraguay",      flag:"🇵🇾",cont:"S.America", lat:-23, lng:-58 },
+  {iso:"MEX",name:"Mexico",        flag:"🇲🇽",cont:"N.America", lat:23,  lng:-102},
+  {iso:"USA",name:"United States", flag:"🇺🇸",cont:"N.America", lat:38,  lng:-97 },
+  {iso:"CAN",name:"Canada",        flag:"🇨🇦",cont:"N.America", lat:60,  lng:-96 },
+  {iso:"HTI",name:"Haiti",         flag:"🇭🇹",cont:"N.America", lat:19,  lng:-73 },
+];
 
+const METRICS=[
+  {key:"heat",   label:"Heatwave Risk",     icon:"🌡️",color:"#ff3355",bg:"rgba(255,51,85,0.1)"},
+  {key:"drought",label:"Drought Severity",  icon:"🏜️",color:"#ff8c00",bg:"rgba(255,140,0,0.1)"},
+  {key:"precip", label:"Precip. Anomaly",   icon:"🌧️",color:"#00aaff",bg:"rgba(0,170,255,0.1)"},
+  {key:"cri",    label:"Climate Risk Index",icon:"⚠️", color:"#cc44ff",bg:"rgba(200,60,255,0.1)"},
+];
+
+/* RNG */
+function rng(seed){let s=seed;return()=>{s=(s*9301+49297)%233280;return s/233280}}
+function genScores(i){const r=rng(i*137+42);return{heat:Math.round(r()*100),drought:Math.round(r()*100),precip:Math.round(r()*100),cri:Math.round(r()*100)}}
+function genHistory(i,k){const b=genScores(i)[k];return Array.from({length:90},(_,d)=>{const r=rng(i*137+d*17);return Math.max(0,Math.min(100,b+(r()-0.5)*28))})}
+
+const DATA=COUNTRIES.map((c,i)=>{
+  const scores=genScores(i),r=rng(i*137+42);r();r();r();r();
+  return{...c,scores,trend:parseFloat(((r()-0.5)*20).toFixed(1))};
+});
+
+/* COLOUR */
+function sColor(s){if(s>=80)return"#ff2244";if(s>=65)return"#ff6600";if(s>=50)return"#ffaa00";if(s>=35)return"#ccdd00";if(s>=20)return"#44ee88";return"#00ddff"}
+function sLabel(s){if(s>=80)return"EXTREME";if(s>=65)return"SEVERE";if(s>=50)return"HIGH";if(s>=35)return"MODERATE";if(s>=20)return"LOW";return"MINIMAL"}
+
+/* STATS */
+function gAvg(k){return Math.round(DATA.reduce((a,c)=>a+c.scores[k],0)/DATA.length)}
+function cAbove(k,t){return DATA.filter(c=>c.scores[k]>=t).length}
+function topN(k,n){return[...DATA].sort((a,b)=>b.scores[k]-a.scores[k]).slice(0,n)}
+function rankOf(c,k){return[...DATA].sort((a,b)=>b.scores[k]-a.scores[k]).findIndex(x=>x.iso===c.iso)+1}
+
+/* ═══════════════ GLOBE GL SETUP ═══════════════ */
+let mx=-9999, my=-9999;
+document.getElementById('globe-wrap').addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  const t = document.getElementById("tooltip");
+  if(t && t.style.display==="block"){
+    t.style.left=(mx+16)+"px";t.style.top=(my-54)+"px";
+  }
+});
+
+const world = Globe()(document.getElementById('globe-viz'))
+  .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+  .backgroundColor('#04080f')
+  .polygonCapColor(() => 'rgba(255, 255, 255, 0)')
+  .polygonSideColor(() => 'rgba(255, 255, 255, 0.05)')
+  .polygonStrokeColor(() => 'rgba(255, 255, 255, 0.15)')
+  .polygonAltitude(0.005)
+  .onPolygonHover((feat, prevFeat) => {
+    if (feat) {
+      const country = DATA.find(c => c.iso === feat.properties.ISO_A3);
+      if (country) { updateTooltip(country, mx, my); } else { updateTooltip(null); }
+    } else { updateTooltip(null); }
+  })
+  .onPolygonClick((feat) => {
+    const country = DATA.find(c => c.iso === feat.properties.ISO_A3);
+    if(country) openDetail(country);
+  })
+  .hexBinPointsData(DATA)
+  .hexBinPointLat('lat')
+  .hexBinPointLng('lng')
+  .hexBinPointWeight(d => d.scores[curMetric])
+  .hexAltitude(d => Math.max(0.01, d.sumWeight / 600))
+  .hexTopColor(d => sColor(d.sumWeight))
+  .hexSideColor(d => sColor(d.sumWeight) + '88')
+  .hexBinResolution(3)
+  .hexMargin(0.2)
+  .onHexClick(hex => {
+    if(hex.points && hex.points.length > 0) openDetail(hex.points[0]);
+  });
+
+fetch('//unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson')
+  .then(res => res.json())
+  .then(countries => world.polygonsData(countries.features));
+
+world.controls().autoRotate = true;
+world.controls().autoRotateSpeed = 0.5;
+world.controls().enableDamping = true;
+
+window.addEventListener('resize', () => {
+  const wrap = document.getElementById('globe-wrap');
+  if(wrap) world.width(wrap.offsetWidth).height(wrap.offsetHeight);
+});
+setTimeout(() => {
+  const wrap = document.getElementById('globe-wrap');
+  if(wrap) world.width(wrap.offsetWidth).height(wrap.offsetHeight);
+}, 100);
+
+function spinTo(lat, lng) {
+  world.pointOfView({ lat, lng, altitude: 1.2 }, 1000);
+}
+
+/* ═══════════════ UI ═══════════════ */
+function buildMetricBtns(){
+  const el=document.getElementById("metric-btns");el.innerHTML="";
+  METRICS.forEach(m=>{
+    const avg=gAvg(m.key);
+    const btn=document.createElement("button");btn.className="idx-btn";btn.id="mb-"+m.key;
+    btn.innerHTML=`<span class="idx-icon">${m.icon}</span><div class="idx-inf"><div class="idx-lbl">${m.label}</div><div class="idx-avg">avg ${avg}/100</div></div><div class="idx-val" style="color:${m.color}">${avg}</div>`;
+    btn.onclick=()=>selectMetric(m.key);el.appendChild(btn);
+  });
+}
+
+function selectMetric(key){
+  curMetric=key;const m=METRICS.find(x=>x.key===key);
+  METRICS.forEach(x=>{const b=document.getElementById("mb-"+x.key);if(!b)return;b.classList.toggle("active",x.key===key);b.style.borderColor=x.key===key?m.color+"55":"";b.style.background=x.key===key?m.bg:""});
+  const mb=document.getElementById("metric-badge");if(mb){mb.textContent=m.icon+" "+m.label.toUpperCase();mb.style.color=m.color;mb.style.borderColor=m.color+"44"}
+  updateTopList();updateStats();if(selCountry)openDetail(selCountry);
+}
+
+function updateTopList(){
+  const el=document.getElementById("top-list");el.innerHTML="";
+  topN(curMetric,6).forEach((c,i)=>{
+    const s=c.scores[curMetric];
+    const row=document.createElement("div");row.className="top-row";
+    row.innerHTML=`<div class="top-rank">#${i+1}</div><div class="top-flag">${c.flag}</div><div class="top-name">${c.name}</div><div class="top-score" style="color:${sColor(s)}">${s}</div>`;
+    row.onclick=()=>openDetail(c);el.appendChild(row);
+  });
+}
+
+function updateStats(){
+  const s=id=>document.getElementById(id);
+  if(s("s-avg"))s("s-avg").textContent=gAvg(curMetric)+"/100";
+  if(s("s-ext"))s("s-ext").textContent=cAbove(curMetric,80);
+  if(s("s-sev"))s("s-sev").textContent=cAbove(curMetric,65);
+  if(s("country-count"))s("country-count").textContent="LIVE · "+DATA.length+" COUNTRIES";
+}
+
+let selCountry=null;
+function openDetail(c){
+  world.controls().autoRotate = false;
+  selCountry=c;selISO=c.iso;spinTo(c.lat,c.lng);
+  const s=c.scores[curMetric],col=sColor(s),lbl=sLabel(s);
+  const sid=document.getElementById.bind(document);
+  sid("d-flag").textContent=c.flag;
+  sid("d-name").textContent=c.name;
+  sid("d-iso").textContent=c.iso+" · "+c.cont;
+  sid("d-score").textContent=s;sid("d-score").style.color=col;
+  sid("d-risk").textContent=lbl+" RISK";sid("d-risk").style.color=col;
+  sid("d-trend").textContent=(c.trend>0?"↑":"↓")+" "+Math.abs(c.trend)+"% 7-day";
+  sid("d-trend").style.color=c.trend>0?"#ff3355":"#00ff88";
+  const dm=sid("d-metrics");dm.innerHTML="";
+  METRICS.forEach(m=>{const ms=c.scores[m.key],mc=sColor(ms);const row=document.createElement("div");row.className="mrow";row.innerHTML=`<div class="mhdr"><span class="mname">${m.icon} ${m.label}</span><span class="mval" style="color:${mc}">${ms}</span></div><div class="btrack"><div class="bfill" style="width:${ms}%;background:${mc}"></div></div>`;dm.appendChild(row)});
+  sid("d-rank").textContent="#"+rankOf(c,curMetric);
+  sid("d-rankof").textContent="of "+DATA.length+" countries";
+  drawSparkline(c,curMetric,col);
+  document.getElementById("right").classList.add("open");
+}
+
+function closeDetail(){
+  world.controls().autoRotate = true;
+  selCountry=null;selISO=null;document.getElementById("right").classList.remove("open")
+}
+
+function drawSparkline(c,k,col){
+  const idx=COUNTRIES.findIndex(x=>x.iso===c.iso);
+  const hist=genHistory(idx,k);
+  const cv=document.getElementById("spark-canvas");if(!cv)return;
+  const c2=cv.getContext("2d");const W=cv.width,H=cv.height;
+  c2.clearRect(0,0,W,H);
+  const mn=Math.min(...hist),mx2=Math.max(...hist)||1;
+  const px=i=>4+(i/(hist.length-1))*(W-8);
+  const py=v=>H-6-((v-mn)/(mx2-mn))*(H-12);
+  c2.beginPath();hist.forEach((v,i)=>i?c2.lineTo(px(i),py(v)):c2.moveTo(px(i),py(v)));
+  c2.lineTo(W-4,H);c2.lineTo(4,H);c2.closePath();c2.fillStyle=col+"22";c2.fill();
+  c2.beginPath();hist.forEach((v,i)=>i?c2.lineTo(px(i),py(v)):c2.moveTo(px(i),py(v)));
+  c2.strokeStyle=col;c2.lineWidth=1.5;c2.stroke();
+}
+
+function updateTooltip(country,sx,sy){
+  const el=document.getElementById("tooltip");if(!el)return;
+  if(!country){el.style.display="none";return}
+  const s=country.scores[curMetric],col=sColor(s);
+  document.getElementById("t-flag").textContent=country.flag;
+  document.getElementById("t-name").textContent=country.name;
+  const ts=document.getElementById("t-score");ts.textContent=s+"/100 · "+sLabel(s);ts.style.color=col;
+  el.style.display="block";el.style.left=(sx+16)+"px";el.style.top=(sy-54)+"px";
+}
+
+/* Mode badge updater removed */
+
+/* ═══════════════ EVENTS ═══════════════ */
+document.getElementById("close-btn").addEventListener("click",closeDetail);
+
+/* ═══════════════ INIT ═══════════════ */
+buildMetricBtns();selectMetric("heat");
+</script>
 </body>
 </html>

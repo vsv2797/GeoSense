@@ -1,46 +1,45 @@
 /* ═══════════════════════════════════════════════════════════════
-   ui.js  —  DOM builders, panel updates, event handlers
-   ───────────────────────────────────────────────────────────────
-   Responsibilities:
-     • Build metric buttons and top-list dynamically
-     • Update right detail panel on country selection
-     • Update stats numbers
-     • Handle all pointer/touch events on the canvas
-     • Draw sparkline in the detail panel
-     • Expose: UI.init()
-
-   Reads from: engine.js (DATA, helpers), globe.js (GlobeRenderer)
+   ui.js  —  DOM builders, panel updates, all event handlers
+   ─────────────────────────────────────────────────────────────
+   CHANGELOG:
+   ✅ [R1]  Metric selector buttons (heat/drought/precip/cri)
+   ✅ [R1]  Right detail panel with score, trend, sparkline, rank
+   ✅ [R4]  Pure UI layer — no canvas math, reads engine.js helpers
+   ✅ [R5]  GitHub Pages compatible (no framework dependencies)
+   ✅ [R7]  Scroll-to-zoom: globe ↔ flat map transition
+   ✅ [R7]  Pan in flat-map mode (drag pans map, not rotates globe)
+   ✅ [R7]  Touch: pinch-to-zoom + single-finger drag
+   ✅ [R7]  Auto-spin stops on zoom-in, resumes on zoom-out
+   ✅ [R8]  Zoom badge shows current mode + tier loading status
    ═══════════════════════════════════════════════════════════════ */
-
 "use strict";
 
 const UI = (() => {
 
-  let currentMetric = "heat";
+  let currentMetric   = "heat";
   let selectedCountry = null;
 
   /* ══ METRIC BUTTONS ════════════════════════════════════════════ */
 
   function buildMetricButtons() {
-    const container = document.getElementById("metric-buttons");
-    container.innerHTML = "";
+    const el = document.getElementById("metric-buttons");
+    if (!el) return;
+    el.innerHTML = "";
 
     METRICS.forEach(m => {
       const avg = globalAvg(m.key);
       const btn = document.createElement("button");
-      btn.className  = "idx-btn";
-      btn.id         = "mb-" + m.key;
-      btn.setAttribute("aria-label", m.label);
-      btn.innerHTML  = `
+      btn.className = "idx-btn";
+      btn.id        = "mb-" + m.key;
+      btn.innerHTML = `
         <span class="idx-icon">${m.icon}</span>
         <div class="idx-info">
           <div class="idx-label">${m.label}</div>
           <div class="idx-avg">avg ${avg}/100</div>
         </div>
-        <div class="idx-score" style="color:${m.color}">${avg}</div>
-      `;
+        <div class="idx-score" style="color:${m.color}">${avg}</div>`;
       btn.addEventListener("click", () => selectMetric(m.key));
-      container.appendChild(btn);
+      el.appendChild(btn);
     });
   }
 
@@ -48,68 +47,58 @@ const UI = (() => {
     currentMetric = key;
     const m = METRICS.find(x => x.key === key);
 
-    // Update button styles
+    // Highlight active button
     METRICS.forEach(x => {
-      const btn = document.getElementById("mb-" + x.key);
-      if (!btn) return;
-      if (x.key === key) {
-        btn.classList.add("active");
-        btn.style.borderColor = m.color + "55";
-        btn.style.background  = m.bg;
-      } else {
-        btn.classList.remove("active");
-        btn.style.borderColor = "";
-        btn.style.background  = "";
-      }
+      const b = document.getElementById("mb-" + x.key);
+      if (!b) return;
+      b.classList.toggle("active", x.key === key);
+      b.style.borderColor = x.key === key ? m.color + "55" : "";
+      b.style.background  = x.key === key ? m.bg : "";
     });
 
-    // Metric badge in globe overlay
+    // Update metric badge overlay on globe
     const badge = document.getElementById("metric-badge");
-    badge.textContent   = m.icon + " " + m.label.toUpperCase();
-    badge.style.color   = m.color;
-    badge.style.borderColor = m.color + "44";
+    if (badge) {
+      badge.textContent       = m.icon + " " + m.label.toUpperCase();
+      badge.style.color       = m.color;
+      badge.style.borderColor = m.color + "44";
+    }
 
-    // Propagate to renderer
     GlobeRenderer.setMetric(key);
-
-    // Refresh derived UI
     updateTopList();
     updateStats();
-
-    // Refresh detail panel if open
     if (selectedCountry) openDetail(selectedCountry);
   }
 
-  /* ══ TOP LIST ══════════════════════════════════════════════════ */
+  /* ══ TOP-RISK LIST ═════════════════════════════════════════════ */
 
   function updateTopList() {
-    const container = document.getElementById("top-list");
-    container.innerHTML = "";
-    const top = topN(currentMetric, 6);
+    const el = document.getElementById("top-list");
+    if (!el) return;
+    el.innerHTML = "";
 
-    top.forEach((c, i) => {
+    topN(currentMetric, 6).forEach((c, i) => {
       const s   = c.scores[currentMetric];
-      const col = scoreToColor(s);
       const row = document.createElement("div");
       row.className = "top-row";
       row.innerHTML = `
-        <div class="top-rank">#${i + 1}</div>
+        <div class="top-rank">#${i+1}</div>
         <div class="top-flag">${c.flag}</div>
         <div class="top-name">${c.name}</div>
-        <div class="top-score" style="color:${col}">${s}</div>
-      `;
+        <div class="top-score" style="color:${scoreToColor(s)}">${s}</div>`;
       row.addEventListener("click", () => openDetail(c));
-      container.appendChild(row);
+      el.appendChild(row);
     });
   }
 
-  /* ══ STATS ═════════════════════════════════════════════════════ */
+  /* ══ GLOBAL STATS ══════════════════════════════════════════════ */
 
   function updateStats() {
-    document.getElementById("stat-avg").textContent     = globalAvg(currentMetric) + "/100";
-    document.getElementById("stat-extreme").textContent = countAbove(currentMetric, 80);
-    document.getElementById("stat-severe").textContent  = countAbove(currentMetric, 65);
-    document.getElementById("country-count").textContent = "LIVE · " + DATA.length + " COUNTRIES";
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set("stat-avg",     globalAvg(currentMetric) + "/100");
+    set("stat-extreme", countAbove(currentMetric, 80));
+    set("stat-severe",  countAbove(currentMetric, 65));
+    set("country-count","LIVE · " + DATA.length + " COUNTRIES");
   }
 
   /* ══ DETAIL PANEL ══════════════════════════════════════════════ */
@@ -121,124 +110,113 @@ const UI = (() => {
 
     const s   = country.scores[currentMetric];
     const col = scoreToColor(s);
-    const lbl = scoreToLabel(s);
 
-    document.getElementById("d-flag").textContent  = country.flag;
-    document.getElementById("d-name").textContent  = country.name;
-    document.getElementById("d-iso").textContent   = country.iso + " · " + country.cont;
+    const set = (id, v)  => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const clr = (id, c)  => { const e = document.getElementById(id); if (e) e.style.color  = c; };
 
-    const scoreEl = document.getElementById("d-score");
-    scoreEl.textContent  = s;
-    scoreEl.style.color  = col;
+    set("d-flag",  country.flag);
+    set("d-name",  country.name);
+    set("d-iso",   country.iso + " · " + country.cont);
+    set("d-score", s);           clr("d-score", col);
+    set("d-risk",  scoreToLabel(s) + " RISK"); clr("d-risk", col);
+    set("d-trend", (country.trend > 0 ? "↑" : "↓") + " " + Math.abs(country.trend) + "% 7-day");
+    clr("d-trend", country.trend > 0 ? "#ff3355" : "#00ff88");
 
-    const riskEl = document.getElementById("d-risk");
-    riskEl.textContent = lbl + " RISK";
-    riskEl.style.color = col;
+    // Metric breakdown bars
+    const dm = document.getElementById("d-metrics");
+    if (dm) {
+      dm.innerHTML = "";
+      METRICS.forEach(m => {
+        const ms = country.scores[m.key], mc = scoreToColor(ms);
+        const row = document.createElement("div");
+        row.className = "metric-row";
+        row.innerHTML = `
+          <div class="metric-hdr">
+            <span class="metric-name">${m.icon} ${m.label}</span>
+            <span class="metric-val" style="color:${mc}">${ms}</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${ms}%; background:${mc}"></div>
+          </div>`;
+        dm.appendChild(row);
+      });
+    }
 
-    const trendEl = document.getElementById("d-trend");
-    trendEl.textContent = (country.trend > 0 ? "↑" : "↓") + " " + Math.abs(country.trend) + "% 7-day trend";
-    trendEl.style.color = country.trend > 0 ? "#ff3355" : "#00ff88";
-
-    // Metric bars
-    const metricsEl = document.getElementById("d-metrics");
-    metricsEl.innerHTML = "";
-    METRICS.forEach(m => {
-      const ms  = country.scores[m.key];
-      const mc  = scoreToColor(ms);
-      const row = document.createElement("div");
-      row.className = "metric-row";
-      row.innerHTML = `
-        <div class="metric-hdr">
-          <span class="metric-name">${m.icon} ${m.label}</span>
-          <span class="metric-val" style="color:${mc}">${ms}</span>
-        </div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width:${ms}%; background:${mc}"></div>
-        </div>
-      `;
-      metricsEl.appendChild(row);
-    });
-
-    // Rank
+    // Global rank
     const rank = rankOf(country, currentMetric);
-    document.getElementById("d-rank").textContent  = "#" + rank;
-    document.getElementById("d-rankof").textContent = "of " + DATA.length + " countries";
+    set("d-rank",   "#" + rank);
+    set("d-rankof", "of " + DATA.length + " countries");
 
     // Sparkline
     drawSparkline(country, currentMetric, col);
 
-    document.getElementById("right-panel").classList.add("open");
+    // Open panel
+    const rp = document.getElementById("right-panel");
+    if (rp) rp.classList.add("open");
   }
 
   function closeDetail() {
     selectedCountry = null;
     GlobeRenderer.setSelected(null);
-    document.getElementById("right-panel").classList.remove("open");
+    const rp = document.getElementById("right-panel");
+    if (rp) rp.classList.remove("open");
   }
 
   /* ══ SPARKLINE ═════════════════════════════════════════════════ */
 
-  function drawSparkline(country, metricKey, color) {
-    const idx     = COUNTRIES.findIndex(c => c.iso === country.iso);
-    const history = generateHistory(idx, metricKey);
-    const c2      = document.getElementById("spark-canvas");
+  function drawSparkline(country, key, color) {
+    const idx  = COUNTRIES.findIndex(c => c.iso === country.iso);
+    const hist = generateHistory(idx, key);
+    const c2   = document.getElementById("spark-canvas");
     if (!c2) return;
-    const ctx2    = c2.getContext("2d");
+    const ctx2 = c2.getContext("2d");
     const W = c2.width, H = c2.height;
-
     ctx2.clearRect(0, 0, W, H);
 
-    const min  = Math.min(...history);
-    const max  = Math.max(...history) || 1;
-    const padX = 4, padY = 6;
+    const mn  = Math.min(...hist);
+    const mx2 = Math.max(...hist) || 1;
+    const px  = i => 4 + (i / (hist.length-1)) * (W-8);
+    const py  = v => H - 6 - ((v - mn) / (mx2 - mn)) * (H-12);
 
     // Area fill
     ctx2.beginPath();
-    history.forEach((v, i) => {
-      const x = padX + (i / (history.length - 1)) * (W - padX * 2);
-      const y = H - padY - ((v - min) / (max - min)) * (H - padY * 2);
-      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
-    });
-    ctx2.lineTo(W - padX, H);
-    ctx2.lineTo(padX, H);
-    ctx2.closePath();
-    ctx2.fillStyle = color + "22";
-    ctx2.fill();
+    hist.forEach((v, i) => i ? ctx2.lineTo(px(i), py(v)) : ctx2.moveTo(px(i), py(v)));
+    ctx2.lineTo(W-4, H); ctx2.lineTo(4, H); ctx2.closePath();
+    ctx2.fillStyle = color + "22"; ctx2.fill();
 
     // Line
     ctx2.beginPath();
-    history.forEach((v, i) => {
-      const x = padX + (i / (history.length - 1)) * (W - padX * 2);
-      const y = H - padY - ((v - min) / (max - min)) * (H - padY * 2);
-      i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
-    });
-    ctx2.strokeStyle = color;
-    ctx2.lineWidth   = 1.5;
-    ctx2.stroke();
+    hist.forEach((v, i) => i ? ctx2.lineTo(px(i), py(v)) : ctx2.moveTo(px(i), py(v)));
+    ctx2.strokeStyle = color; ctx2.lineWidth = 1.5; ctx2.stroke();
   }
 
   /* ══ TOOLTIP ═══════════════════════════════════════════════════ */
 
   function updateTooltip(country, screenX, screenY) {
     const el = document.getElementById("tooltip");
+    if (!el) return;
     if (!country) { el.style.display = "none"; return; }
 
     const s   = country.scores[currentMetric];
     const col = scoreToColor(s);
-    document.getElementById("t-flag").textContent  = country.flag;
-    document.getElementById("t-name").textContent  = country.name;
-    document.getElementById("t-score").textContent = s + "/100 · " + scoreToLabel(s);
-    document.getElementById("t-score").style.color = col;
+
+    const tf = document.getElementById("t-flag");
+    const tn = document.getElementById("t-name");
+    const ts = document.getElementById("t-score");
+    if (tf) tf.textContent  = country.flag;
+    if (tn) tn.textContent  = country.name;
+    if (ts) { ts.textContent = s + "/100 · " + scoreToLabel(s); ts.style.color = col; }
 
     el.style.display = "block";
     el.style.left    = (screenX + 16) + "px";
     el.style.top     = (screenY - 54) + "px";
   }
 
-  /* ══ CANVAS EVENT HANDLERS ═════════════════════════════════════ */
+  /* ══ CANVAS EVENTS ═════════════════════════════════════════════ */
 
-  function attachCanvasEvents(canvas) {
+  function attachEvents(canvas) {
 
+    /* ── Mouse move ── */
     canvas.addEventListener("mousemove", e => {
       const rect = canvas.getBoundingClientRect();
       const x    = e.clientX - rect.left;
@@ -246,16 +224,24 @@ const UI = (() => {
       GlobeRenderer.setMouse(x, y);
 
       if (GlobeState.dragging) {
-        GlobeState.velY += (x - GlobeState.lastX) * 0.007;
-        GlobeState.velX += (y - GlobeState.lastY) * 0.007;
+        const dx = x - GlobeState.lastX;
+        const dy = y - GlobeState.lastY;
+
+        if (GlobeRenderer.isMapMode()) {
+          // ✅ [R7] Flat map — drag pans the map
+          GlobeState.panX += dx;
+          GlobeState.panY += dy;
+        } else {
+          // Globe — drag rotates the globe
+          GlobeState.velY += dx * 0.007;
+          GlobeState.velX += dy * 0.007;
+        }
         GlobeState.lastX = x;
         GlobeState.lastY = y;
       }
 
-      // Tooltip driven by hover from renderer
       const hov = GlobeRenderer.getHovered();
       updateTooltip(hov, e.clientX, e.clientY);
-
       canvas.style.cursor = hov ? "pointer" : (GlobeState.dragging ? "grabbing" : "crosshair");
     });
 
@@ -263,11 +249,10 @@ const UI = (() => {
       GlobeRenderer.clearMouse();
       GlobeState.dragging = false;
       updateTooltip(null);
-      canvas.style.cursor = "crosshair";
     });
 
     canvas.addEventListener("mousedown", e => {
-      const rect       = canvas.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
       GlobeState.dragging  = true;
       GlobeState.autoSpin  = false;
       GlobeState.lastX     = e.clientX - rect.left;
@@ -278,55 +263,96 @@ const UI = (() => {
     window.addEventListener("mouseup", () => {
       GlobeState.dragging = false;
       canvas.style.cursor = "crosshair";
-      setTimeout(() => { GlobeState.autoSpin = true; }, 2500);
+      setTimeout(() => { if (GlobeState.zoom < 1.5) GlobeState.autoSpin = true; }, 3000);
     });
 
+    /* ── Click → select country ── */
     canvas.addEventListener("click", e => {
-      if (Math.abs(GlobeState.velY) > 0.05) return; // ignore click after fast drag
+      // Ignore if user just dragged
+      if (!GlobeRenderer.isMapMode() && Math.abs(GlobeState.velY) > 0.05) return;
       const rect = canvas.getBoundingClientRect();
       const hit  = GlobeRenderer.hitTest(
-        e.clientX - rect.left,
-        e.clientY - rect.top,
-        canvas.offsetWidth,
-        canvas.offsetHeight
+        e.clientX - rect.left, e.clientY - rect.top,
+        canvas.offsetWidth, canvas.offsetHeight
       );
       if (hit) openDetail(hit);
     });
 
-    // Touch
+    /* ── ✅ [R7] Scroll → zoom in/out, switch globe ↔ map mode ── */
+    canvas.addEventListener("wheel", e => {
+      e.preventDefault();
+      const delta    = e.deltaY > 0 ? -0.18 : 0.18;
+      const prevZoom = GlobeState.zoom;
+      GlobeState.zoom = Math.max(0.7, Math.min(8, GlobeState.zoom + delta));
+
+      // Reset pan + re-enable auto-spin when zooming back out to globe
+      if (GlobeState.zoom < 1.5 && prevZoom >= 1.5) {
+        GlobeState.panX     = 0;
+        GlobeState.panY     = 0;
+        GlobeState.autoSpin = true;
+      }
+      // Stop auto-spin when entering map mode
+      if (GlobeState.zoom >= 2.2) GlobeState.autoSpin = false;
+    }, { passive: false });
+
+    /* ── ✅ [R7] Touch: single-finger drag + pinch-to-zoom ── */
+    let lastTouchDist = null;
+
     canvas.addEventListener("touchstart", e => {
-      const rect       = canvas.getBoundingClientRect();
-      GlobeState.dragging  = true;
-      GlobeState.autoSpin  = false;
-      GlobeState.lastX     = e.touches[0].clientX - rect.left;
-      GlobeState.lastY     = e.touches[0].clientY - rect.top;
+      const rect = canvas.getBoundingClientRect();
+      if (e.touches.length === 1) {
+        GlobeState.dragging  = true;
+        GlobeState.autoSpin  = false;
+        GlobeState.lastX     = e.touches[0].clientX - rect.left;
+        GlobeState.lastY     = e.touches[0].clientY - rect.top;
+      } else if (e.touches.length === 2) {
+        GlobeState.dragging = false;
+        lastTouchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
     }, { passive: true });
 
     canvas.addEventListener("touchmove", e => {
       const rect = canvas.getBoundingClientRect();
-      const tx   = e.touches[0].clientX - rect.left;
-      const ty   = e.touches[0].clientY - rect.top;
-      GlobeState.velY += (tx - GlobeState.lastX) * 0.007;
-      GlobeState.velX += (ty - GlobeState.lastY) * 0.007;
-      GlobeState.lastX = tx;
-      GlobeState.lastY = ty;
+      if (e.touches.length === 1 && GlobeState.dragging) {
+        const tx = e.touches[0].clientX - rect.left;
+        const ty = e.touches[0].clientY - rect.top;
+        const dx = tx - GlobeState.lastX, dy = ty - GlobeState.lastY;
+        if (GlobeRenderer.isMapMode()) {
+          GlobeState.panX += dx; GlobeState.panY += dy;
+        } else {
+          GlobeState.velY += dx * 0.007; GlobeState.velX += dy * 0.007;
+        }
+        GlobeState.lastX = tx; GlobeState.lastY = ty;
+      } else if (e.touches.length === 2 && lastTouchDist !== null) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        GlobeState.zoom = Math.max(0.7, Math.min(8, GlobeState.zoom + (dist - lastTouchDist) * 0.01));
+        lastTouchDist   = dist;
+        if (GlobeState.zoom >= 2.2) GlobeState.autoSpin = false;
+      }
     }, { passive: true });
 
     canvas.addEventListener("touchend", () => {
       GlobeState.dragging = false;
-      setTimeout(() => { GlobeState.autoSpin = true; }, 2500);
+      lastTouchDist       = null;
+      setTimeout(() => { if (GlobeState.zoom < 1.5) GlobeState.autoSpin = true; }, 3000);
     });
 
-    // Close button
-    document.getElementById("close-btn").addEventListener("click", closeDetail);
+    /* ── Close button ── */
+    document.getElementById("close-btn")?.addEventListener("click", closeDetail);
   }
 
-  /* ── Public API ───────────────────────────────────────────────── */
+  /* ── Public API ─────────────────────────────────────────────── */
   return {
     init(canvasEl) {
       buildMetricButtons();
-      selectMetric("heat");  // sets active state + badge + calls updateTopList/Stats
-      attachCanvasEvents(canvasEl);
+      selectMetric("heat");
+      attachEvents(canvasEl);
     },
     selectMetric,
     openDetail,

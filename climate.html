@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoSense | Pulse Dashboard</title>
+  <link rel="stylesheet" href="css/climate.css">
+  <script src="https://unpkg.com/globe.gl"></script>
+</head>
+
+<body>
+  <!-- Ambient glow behind globe -->
+  <div id="earth-glow"></div>
+
+  <header>
+    <div class="logo" onclick="window.location.href='index.html'">
+      <div class="logo-mark">🌍</div>
+      <div>
+        <div class="logo-name">Geo<span>Sense</span></div>
+        <div class="logo-tag">PULSE DASHBOARD</div>
+      </div>
+    </div>
+    <div class="header-right">
+        <div id="btn-atm" class="live-pill">
+          <span>[ MAP: DATA CHOROPLETH ]</span>
+        </div>
+        <div class="live-pill">
+          <div class="live-dot"></div>
+          <span id="country-count">LIVE · SYNCING</span>
+        </div>
+    </div>
+  </header>
+
+  <div id="main">
+    
+    <!-- LEFT PANEL: Dynamic Control Panel -->
+    <aside id="left">
+      <div class="slabel">CLIMATE METRICS</div>
+      <div id="metric-btns"></div>
+      
+      <div class="divider"></div>
+      
+      <div class="slabel">GLOBAL AGGREGATE</div>
+      <div id="dist-stats" class="dist-wrap">
+          <!-- Populated by JS -->
+      </div>
+
+      <div class="divider"></div>
+      
+      <div class="slabel">CRITICAL ZONES</div>
+      <div id="top-list"></div>
+    </aside>
+
+    <!-- GLOBE CANVAS -->
+    <section id="globe-wrap">
+      <div id="globe-viz"></div>
+      <div id="metric-badge"><span style="opacity:0.7">TRACKING:</span> PM10 POLLUTANTS</div>
+      <div id="legend">
+        <span class="leg-lbl">SAFE</span>
+        <div class="leg-bar"></div>
+        <span class="leg-lbl">HAZARDOUS</span>
+      </div>
+      <div id="hint">↻ Drag · Scroll to zoom · Click region for telemetry</div>
+    </section>
+
+    <!-- RIGHT PANEL: Region Inspector -->
+    <aside id="right">
+      <div id="right-inner">
+        <div class="det-hdr">
+          <div id="d-flag" class="det-flag">🌍</div>
+          <button class="close-btn" id="close-btn">×</button>
+        </div>
+        <div id="d-name" class="det-name"></div>
+        <div id="d-iso" class="det-iso"></div>
+        
+        <div class="score-blk">
+          <div id="d-score" class="det-score"></div>
+          <div class="score-den">/100</div>
+        </div>
+        <div id="d-risk" class="det-risk"></div>
+        <div id="d-trend" class="det-trend"></div>
+
+        <div class="slabel" style="margin-top:20px">PRIMARY CLIMATE DRIVER</div>
+        <div class="info-box" id="d-cause"></div>
+
+        <div class="slabel">LIVE LOCAL WEATHER</div>
+        <div class="info-box" id="d-weather">
+          <span id="d-w-icon" style="font-size:24px;">⏳</span>
+          <span id="d-w-desc">Fetching API...</span>
+        </div>
+
+        <div class="slabel" style="margin-top:14px">MULTIVARIATE TELEMETRY</div>
+        <div id="d-metrics"></div>
+        
+        <div class="rank-box">
+          <div class="rank-lbl">GLOBAL IMPACT RANK</div>
+          <div id="d-rank" class="rank-num"></div>
+          <div id="d-rankof" class="rank-of"></div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- HOVER TOOLTIP -->
+  <div id="tooltip">
+    <div class="tip-inner">
+      <div id="t-flag" class="tip-flag"></div>
+      <div>
+        <div id="t-name" class="tip-name"></div>
+        <div id="t-score" class="tip-score"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/climate.js"></script>
+</body>
+</html>

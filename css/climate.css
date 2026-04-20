@@ -1,0 +1,248 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0a0f18; }
+::-webkit-scrollbar-thumb { background: #1f2d3d; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #020408;
+  font-family: 'Rajdhani', sans-serif;
+  color: #e2e8f0;
+}
+
+header {
+  position: absolute; top: 0; left: 0; width: 100%;
+  padding: 20px 30px; display: flex; justify-content: space-between; align-items: flex-start;
+  z-index: 60; pointer-events: none;
+}
+
+.logo { display: flex; align-items: center; gap: 12px; pointer-events: auto; cursor: pointer; }
+.logo-mark { 
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; background: #fff; color: #020408;
+    font-weight: 800; font-size: 18px; border-radius: 2px;
+}
+.logo-name { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; text-transform: uppercase; color: #fff; }
+.logo-name span { color: #8899aa; }
+.logo-tag { font-family: 'Roboto Mono', monospace; font-size: 9px; color: #64748b; letter-spacing: 2px; margin-top: 0px; }
+
+.header-right { display: flex; gap: 10px; align-items: center; pointer-events: auto; }
+.live-pill {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  background: #0a0f18; padding: 6px 12px; border: 1px solid #1f2d3d; border-radius: 2px;
+  font-family: 'Roboto Mono', monospace; font-size: 10px; font-weight: 600;
+  color: #cbd5e1; pointer-events: auto; transition: background 0.3s;
+}
+.live-pill:hover { background: #1f2d3d; }
+.live-dot { width: 5px; height: 5px; background: #10b981; }
+
+#main {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; z-index: 10;
+}
+
+/* ═════ LEFT PANEL - PROFESSIONAL TERMINAL ═════ */
+#left {
+  position: absolute; left: 30px; top: 80px; bottom: 30px; width: 360px;
+  background: rgba(10, 15, 24, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid #1f2d3d; border-radius: 0px;
+  padding: 24px; display: flex; flex-direction: column; overflow-y: auto; 
+  pointer-events: auto; z-index: 50; /* Z-index fix for scrolling */
+}
+
+.slabel {
+  font-family: 'Roboto Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #64748b;
+  margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #1f2d3d; text-transform: uppercase;
+}
+
+.divider { height: 1px; background: transparent; margin: 16px 0; }
+
+/* Metric Segmented Control */
+#metric-btns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.metric-btn {
+  background: #06090e; border: 1px solid #1f2d3d;
+  padding: 10px; cursor: pointer; text-align: left;
+  position: relative; overflow: hidden; border-radius: 2px;
+}
+.metric-btn:hover { background: #0f172a; border-color: #334155; }
+.metric-btn.active { background: #0f172a; border-color: #f8fafc; }
+.btn-icon { width: 18px; height: 18px; margin-bottom: 6px; fill: #64748b; }
+.metric-btn.active .btn-icon { fill: #f8fafc; }
+.btn-title { font-size: 11px; font-weight: 600; color: #94a3b8; }
+.metric-btn.active .btn-title { color: #f8fafc; }
+.btn-value { font-family: 'Roboto Mono', monospace; font-size: 10px; color: #64748b; margin-top: 4px; }
+.metric-btn.active .btn-value { color: #94a3b8; }
+
+/* Global Distribution Chart */
+.dist-wrap { background: transparent; border-radius: 0; padding: 0; margin-top: 10px; border: none; }
+.dist-title { font-size: 10px; font-family: 'Roboto Mono', monospace; color: #64748b; margin-bottom: 12px; }
+.dist-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 11px; font-weight: 600; }
+.dist-bar-bg { width: 100%; height: 4px; background: #0f172a; margin-bottom: 16px; position: relative; overflow: hidden; }
+.dist-bar-fill { position: absolute; left: 0; top: 0; height: 100%; transition: width 0.4s ease; }
+
+/* Critical Zones Leaderboard */
+.leader-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px; margin-bottom: 6px; border-radius: 0px;
+  background: #06090e; border: 1px solid #1f2d3d;
+  border-left: 2px solid transparent; position: relative; overflow: hidden;
+  cursor: pointer; transition: background 0.2s;
+}
+.leader-item:hover { background: #0f172a; border-color: #334155; }
+.leader-bg-bar {
+  position: absolute; left: 0; top: 0; height: 100%; z-index: 0; opacity: 0.15;
+  transition: width 0.4s ease;
+}
+.leader-content { position: relative; z-index: 1; display: flex; justify-content: space-between; width: 100%; align-items: center; }
+.leader-country { font-weight: 600; font-size: 11px; color: #cbd5e1; }
+.leader-flag { display: inline-block; background: #1f2d3d; color: #94a3b8; font-family: 'Roboto Mono', monospace; font-size: 9px; padding: 2px 4px; margin-right: 6px; border-radius: 2px; }
+.leader-score { font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 700; }
+
+/* ═════ GLOBE WRAPPER ═════ */
+#globe-wrap { flex: 1; position: relative; z-index: 5; }
+#globe-viz { width: 100%; height: 100%; cursor: crosshair; }
+
+#metric-badge {
+  position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+  font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #fff;
+  pointer-events: none; padding: 6px 16px; border: 1px solid #334155; 
+  background: #020408; font-family: 'Roboto Mono', monospace;
+}
+
+#legend {
+  position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  background: #0a0f18; padding: 8px 16px; border: 1px solid #1f2d3d; pointer-events: none;
+}
+.leg-lbl { font-family: 'Roboto Mono', monospace; font-size: 9px; font-weight: 700; color: #64748b; }
+.leg-bar { width: 200px; height: 4px; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444, #8b5cf6); }
+
+#hint {
+  position: absolute; bottom: 30px; right: 40px;
+  font-family: 'Roboto Mono', monospace; font-size: 10px; color: #64748b;
+  pointer-events: none;
+}
+
+/* ═════ RIGHT PANEL - BUG FIXES & REDESIGN ═════ */
+/* Fix: move pointer events from inner to parent based on active class */
+#right {
+  position: absolute; right: 30px; top: 80px; bottom: 30px; width: 340px;
+  pointer-events: none; z-index: 50; /* Z-Index fix for right pane overlay issues */
+  transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#right.active {
+  pointer-events: auto; /* Re-enables clicking on the whole panel */
+  transform: translateX(0);
+}
+#right-inner {
+  background: rgba(10, 15, 24, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid #1f2d3d; border-radius: 0;
+  padding: 24px; height: 100%; display: flex; flex-direction: column; overflow-y: auto; pointer-events: auto;
+}
+
+.det-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.det-flag { 
+    background: #f8fafc; color: #020408; font-family: 'Roboto Mono', monospace; 
+    font-weight: 700; padding: 4px 8px; font-size: 14px; border-radius: 2px;
+}
+.close-btn { 
+    background: #06090e; border: 1px solid #1f2d3d; color: #94a3b8; 
+    width: 24px; height: 24px; font-size: 16px; cursor: pointer; transition: all 0.2s; 
+    display: flex; align-items: center; justify-content: center;
+}
+.close-btn:hover { background: #1f2d3d; color: #fff; }
+
+.det-name { font-size: 20px; font-weight: 700; line-height: 1.1; margin-bottom: 4px; color: #f8fafc; }
+.det-iso { font-family: 'Roboto Mono', monospace; font-size: 11px; color: #64748b; margin-bottom: 24px; }
+.score-blk { display: flex; align-items: baseline; gap: 4px; margin-bottom: 6px; }
+.det-score { font-size: 36px; font-weight: 700; font-family: 'Roboto Mono', monospace; letter-spacing: -1px; }
+.score-den { font-size: 12px; color: #64748b; font-family: 'Roboto Mono', monospace; }
+.det-risk { font-size: 11px; font-weight: 700; letter-spacing: 1px; font-family: 'Roboto Mono', monospace; margin-bottom: 24px; }
+
+.info-box { 
+    background: transparent; border: 1px solid #1f2d3d; padding: 12px; 
+    font-size: 11px; line-height: 1.5; color: #cbd5e1; margin-bottom: 20px; 
+    display: flex; align-items: flex-start; gap: 10px; font-family: 'Roboto Mono', monospace;
+}
+
+.mlist-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1f2d3d; }
+.mlist-lbl { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; color: #94a3b8; }
+.mlist-icon { width: 14px; height: 14px; fill: #64748b; }
+.mlist-val { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 700; }
+
+.rank-box { margin-top: auto; padding-top: 24px; border-top: 1px solid #1f2d3d; display: flex; align-items: center; justify-content: space-between; }
+.rank-lbl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #64748b; font-family: 'Roboto Mono', monospace; }
+.rank-num { font-size: 24px; font-weight: 700; color: #f8fafc; font-family: 'Roboto Mono', monospace; }
+.rank-of { font-size: 10px; color: #64748b; font-family: 'Roboto Mono', monospace; }
+
+/* Custom Tooltip */
+#tooltip { position: absolute; display: none; z-index: 100; pointer-events: none; }
+.tip-inner { background: #0a0f18; border: 1px solid #1f2d3d; padding: 8px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-radius: 2px; }
+.tip-flag { font-family: 'Roboto Mono', monospace; color: #94a3b8; font-size: 10px; background: #1f2d3d; padding: 2px 4px; border-radius: 2px; }
+.tip-name { font-size: 11px; font-weight: 600; line-height: 1.2; margin-bottom: 2px; color: #f8fafc; }
+.tip-score { font-family: 'Roboto Mono', monospace; font-size: 10px; font-weight: 700; }
+
+/* ==================================
+   DYNAMIC GLOBE THERMAL PARTICLES
+=================================== */
+
+.globe-flame {
+  width: 14px;
+  height: 14px;
+  background: radial-gradient(circle at 50% 100%, #ffeb3b, #ff5e00, #ff0000);
+  border-radius: 50% 0% 50% 50%;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 10px #ff5e00, 0 0 20px #ff0000, 0 0 30px #ff0000;
+  animation: flicker 0.15s infinite alternate ease-in-out;
+  pointer-events: none;
+}
+
+.globe-flame.extreme {
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 15px #ffeb3b, 0 0 25px #ff5e00, 0 0 40px #ff0000;
+  animation: flicker-extreme 0.1s infinite alternate linear;
+}
+
+@keyframes flicker {
+  0% { transform: scale(1) rotate(-45deg); opacity: 0.9; }
+  100% { transform: scale(1.2) rotate(-43deg); opacity: 1; }
+}
+
+@keyframes flicker-extreme {
+  0% { transform: scale(1) rotate(-42deg); opacity: 0.8; }
+  100% { transform: scale(1.4) rotate(-48deg) translate(2px, -2px); opacity: 1; }
+}
+
+.globe-frost {
+  width: 12px;
+  height: 12px;
+  background-color: transparent;
+  border: 1px solid #00e5ff;
+  border-radius: 1px;
+  box-shadow: 0 0 10px #00e5ff, inset 0 0 5px #00e5ff;
+  animation: frost-spin 4s infinite linear;
+  pointer-events: none;
+}
+
+.globe-frost.deep {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 15px #8b5cf6, 0 0 30px #00e5ff, inset 0 0 10px #8b5cf6;
+  animation: frost-spin 2s infinite linear reverse;
+}
+
+@keyframes frost-spin {
+  0% { transform: rotate(0deg) scale(0.8); opacity: 0.7;}
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1;}
+  100% { transform: rotate(360deg) scale(0.8); opacity: 0.7;}
+}

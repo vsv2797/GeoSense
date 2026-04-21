@@ -1,150 +1,32 @@
-# 🌍 ClimateRisk.live — Global Climate Intelligence Globe
+# 🌍 GeoSense — Global Climate Intelligence Platform
 
-An interactive 3-D globe showing country-level climate risk indices.
-Drag to rotate · Click a country · Switch between 4 climate metrics.
-
----
-
-## 📁 Project Structure
-
-```
-climate-globe/
-│
-├── index.html              ← Page structure (HTML only, no logic/styles inline)
-│
-├── css/
-│   ├── reset.css           ← Browser normalization
-│   ├── theme.css           ← ⭐ ALL design tokens (colours, fonts, spacing)
-│   ├── layout.css          ← Page structure, flex/grid, responsive breakpoints
-│   ├── components.css      ← Every UI widget (buttons, panels, tooltip, etc.)
-│   └── animations.css      ← Keyframes and transitions
-│
-└── js/
-    ├── data.js             ← Country list + metric definitions (pure data)
-    ├── engine.js           ← ⭐ Maths engine (projection, rotation, scoring, colours)
-    ├── globe.js            ← Canvas renderer (draws the globe each frame)
-    ├── ui.js               ← DOM builder + event handlers
-    └── main.js             ← Entry point (boots everything)
-```
+**Live Demo:** [vsv2797.github.io/climate_change-app](https://vsv2797.github.io/climate_change-app)
 
 ---
 
-## ✏️ How to Customise
+## Why This Project Exists
 
-### Change colours / theme
-Edit **`css/theme.css`** — every colour, font, and spacing value is a CSS variable.
-Change `--risk-extreme` and the dot colours update automatically on both the globe and the legend.
+Climate change is one of the defining challenges of our time, but for most people it remains abstract — numbers in a report, graphs in a paper. This project started from a simple frustration: there are incredible datasets out there on air quality, temperature anomalies, and atmospheric pollution, but very few tools that make them feel *real* and *immediate* to a general audience.
 
-### Add a new climate metric
-1. Open **`js/data.js`** and add an entry to the `METRICS` array.
-2. Open **`js/engine.js`** → `generateScores()` and add the new key to the returned object.
-   (Or wire it to your real API there.)
+GeoSense is an attempt to bridge that gap. It's a browser-based, zero-installation intelligence platform that lets you explore the state of the planet in three dimensions — from country-level air pollution and climate risk indices to live Earth-observation satellites actively scanning the planet from orbit.
 
-### Add more countries
-Open **`js/data.js`** and append to the `COUNTRIES` array:
-```js
-{ iso:"BRN", name:"Brunei", flag:"🇧🇳", cont:"Asia", lat:4, lng:115 },
-```
-
-### Connect to a real API
-Open **`js/engine.js`** → find `generateScores()` and replace the seeded-random
-logic with a `fetch()` call to your data endpoint.
-The rest of the app will work unchanged.
+The project is built entirely from web technologies with no backend server required. Everything runs in the browser, which means anyone with a link can open it instantly. For a geoinformatics student, it was also a useful exercise in combining spatial data, real-time APIs, and 3D rendering into something meaningful.
 
 ---
 
-## 🚀 Deploy to GitHub Pages (step-by-step)
+## What It Does
 
-### Prerequisites
-- A free GitHub account → https://github.com/signup
+The platform is split into three views:
 
----
+**1. Climate Risk Globe (`index.html`)**
+An interactive 3D Earth rendered with a blue-marble texture and a rotating cloud layer. Countries are shaded by climate metrics including PM2.5 particulate matter, PM10 pollutants, Carbon Monoxide (CO), Nitrogen Dioxide (NO₂), and a temperature index. You can rotate, zoom, and click any country to inspect its readings. The globe auto-rotates and the atmosphere glows with a light-blue tint to give a sense of scale.
 
-### Step 1 — Create a new repository
+**2. Pulse Dashboard (`climate.html`)**
+A choropleth-style dashboard showing country-level climate scores on a WebGL globe. The left panel shows a ranked list of critical impact zones and global aggregate statistics. Clicking a country opens a detailed inspector panel on the right showing live local weather fetched from an external API, a multivariate telemetry breakdown, and a global impact rank.
 
-1. Go to https://github.com/new
-2. Fill in:
-   - **Repository name:** `climate-globe`  (or any name you like)
-   - **Visibility:** ✅ Public  *(GitHub Pages requires public for free accounts)*
-   - **Initialize:** tick "Add a README file"
-3. Click **"Create repository"**
+**3. Orbital Tracker (`orbital.html`)**
+A live satellite tracker that fetches real Two-Line Element (TLE) data from CelesTrak and plots the current positions of Earth observation satellites in real time around the globe. You can filter between Optical and Radar (SAR) sensor types. Clicking a satellite shows its live orbital velocity, altitude, inclination, orbital period, a ground coverage footprint ring, and the full orbital trajectory path — all pulled and computed live. Wikipedia summaries for satellites like Sentinel-1, Sentinel-2, Landsat 8/9, and RADARSAT are fetched automatically.
 
 ---
 
-### Step 2 — Upload all the files
-
-#### Option A — Drag & Drop (easiest, no Git needed)
-
-1. On your new repo page click **"Add file" → "Upload files"**
-2. Open your local `climate-globe/` folder
-3. Drag **all files and folders** into the GitHub upload area:
-   ```
-   index.html
-   css/   (drag the whole folder)
-   js/    (drag the whole folder)
-   README.md
-   ```
-4. Scroll down, write a commit message like `Initial upload`
-5. Click **"Commit changes"**
-
-#### Option B — Git command line
-
-```bash
-# Clone your empty repo
-git clone https://github.com/YOUR-USERNAME/climate-globe.git
-cd climate-globe
-
-# Copy all project files into this folder, then:
-git add .
-git commit -m "Initial upload"
-git push origin main
-```
-
----
-
-### Step 3 — Enable GitHub Pages
-
-1. In your repo, click the **"Settings"** tab (top right area)
-2. In the left sidebar scroll down and click **"Pages"**
-3. Under **"Source"** select:
-   - Branch: `main`
-   - Folder: `/ (root)`
-4. Click **"Save"**
-
-GitHub will show a banner:
-> *"Your site is being published…"*
-
----
-
-### Step 4 — Wait ~60 seconds then open your site
-
-Your live URL will be:
-```
-https://YOUR-USERNAME.github.io/climate-globe/
-```
-
-Refresh the Settings → Pages tab to see the live URL appear.
-Click it — your globe is live! 🎉
-
----
-
-## 🔄 Making updates later
-
-After any edit, just re-upload changed files via the GitHub web UI
-(click the file → pencil icon to edit, or upload again to replace),
-or use `git push` if you set up the command line.
-
-Changes go live within ~30 seconds.
-
----
-
-## 📌 Tech stack
-
-| Layer        | Technology                        |
-|--------------|-----------------------------------|
-| Rendering    | HTML5 Canvas 2D (no dependencies) |
-| Maths        | Vanilla JS (no libraries)         |
-| Styling      | Pure CSS with custom properties   |
-| Hosting      | GitHub Pages (free, static)       |
-
-Zero npm, zero bundlers, zero frameworks required.
+## Project Structure

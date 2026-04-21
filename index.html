@@ -1,505 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GeoSense</title>
-<script src="//unpkg.com/globe.gl"></script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#04080f}
-body{font-family:'Syne',system-ui,sans-serif;color:#e2eaf4}
-#app{display:flex;flex-direction:column;height:100vh}
-
-/* HEADER */
-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:rgba(4,8,15,0.96);border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;z-index:10}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-mark{font-size:22px}
-.logo-name{font-size:16px;font-weight:800;letter-spacing:-0.5px}
-.logo-name span{color:#00e5ff}
-.logo-tag{font-family:'JetBrains Mono',monospace;font-size:8px;color:#1a2a3a;letter-spacing:2px;margin-top:1px}
-.live-pill{display:flex;align-items:center;gap:6px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.22);border-radius:100px;padding:4px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#00ff88;letter-spacing:1px}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#00ff88;animation:blink 1.4s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.15}}
-
-/* MAIN */
-#main{display:flex;flex:1;overflow:hidden}
-
-/* LEFT PANEL */
-#left{width:192px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.05);background:rgba(4,8,15,0.92);padding:12px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:0}
-.slabel{font-family:'JetBrains Mono',monospace;font-size:8px;color:#1a2a3a;letter-spacing:2px;margin-bottom:8px;padding-left:2px}
-.idx-btn{display:flex;align-items:center;gap:8px;width:100%;padding:9px 10px;border-radius:10px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);cursor:pointer;color:#e2eaf4;text-align:left;transition:all 0.2s}
-.idx-btn:hover{background:rgba(255,255,255,0.05)}
-.idx-btn.active{transform:translateX(4px)}
-.idx-icon{font-size:17px;width:20px;text-align:center;flex-shrink:0}
-.idx-inf{flex:1;min-width:0}
-.idx-lbl{font-size:11px;font-weight:700}
-.idx-avg{font-family:'JetBrains Mono',monospace;font-size:8px;color:#334455;margin-top:1px}
-.idx-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;flex-shrink:0}
-.divider{height:1px;background:rgba(255,255,255,0.05);margin:8px 0;flex-shrink:0}
-.top-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background 0.15s}
-.top-row:hover{background:rgba(255,255,255,0.06)}
-.top-rank{font-size:9px;color:#223344;font-family:'JetBrains Mono',monospace;width:16px;flex-shrink:0}
-.top-flag{font-size:13px;flex-shrink:0}
-.top-name{flex:1;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.top-score{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0}
-.stats-box{padding:10px;border-radius:10px;background:rgba(255,34,68,0.06);border:1px solid rgba(255,34,68,0.14);margin-top:4px}
-.stats-ttl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#ff3355;letter-spacing:1px;margin-bottom:6px}
-.stats-row{font-size:11px;color:#445566;margin-bottom:2px}
-.stats-row b{color:#e2eaf4}
-.stats-row b.d{color:#ff3355}
-.stats-row b.w{color:#ff8c00}
-
-/* GLOBE WRAP */
-#globe-wrap{flex:1;position:relative;overflow:hidden;background:#04080f}
-#globe-viz{width:100%;height:100%;display:block;cursor:crosshair}
-
-/* OVERLAYS */
-#metric-badge{position:absolute;top:12px;right:12px;background:rgba(4,8,15,0.9);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:6px 12px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;pointer-events:none}
-#legend{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(4,8,15,0.88);border:1px solid rgba(255,255,255,0.07);border-radius:100px;padding:8px 18px;pointer-events:none}
-.leg-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:#334455;letter-spacing:1px}
-.leg-bar{width:120px;height:7px;border-radius:100px;background:linear-gradient(90deg,#00ddff,#44ee88,#ccdd00,#ffaa00,#ff6600,#ff2244)}
-#hint{position:absolute;bottom:14px;left:14px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#1a2a3a;letter-spacing:1px;pointer-events:none}
-
-/* TOOLTIP */
-#tooltip{position:fixed;background:rgba(4,8,15,0.96);border:1px solid rgba(0,229,255,0.28);border-radius:10px;padding:9px 13px;pointer-events:none;display:none;z-index:1000}
-.tip-inner{display:flex;align-items:center;gap:9px}
-.tip-flag{font-size:20px}
-.tip-name{font-weight:700;font-size:13px}
-.tip-score{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:2px}
-
-/* RIGHT PANEL */
-#right{width:0;flex-shrink:0;border-left:1px solid rgba(255,255,255,0.05);background:rgba(4,8,15,0.94);overflow:hidden;transition:width 0.35s cubic-bezier(0.22,1,0.36,1)}
-#right.open{width:215px}
-#right-inner{width:215px;padding:16px;overflow-y:auto;height:100%}
-.det-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.det-flag{font-size:40px}
-.close-btn{font-size:22px;color:#334455;cursor:pointer;background:none;border:none;padding:2px 4px;transition:color 0.2s}
-.close-btn:hover{color:#e2eaf4}
-.det-name{font-size:17px;font-weight:800;letter-spacing:-0.5px;margin-bottom:2px}
-.det-iso{font-family:'JetBrains Mono',monospace;font-size:9px;color:#223344;letter-spacing:1px;margin-bottom:14px}
-.score-blk{display:flex;align-items:flex-end;gap:5px;margin-bottom:3px}
-.det-score{font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;line-height:1}
-.score-den{font-family:'JetBrains Mono',monospace;font-size:13px;color:#334455;margin-bottom:7px}
-.det-risk{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;margin-bottom:4px}
-.det-trend{font-family:'JetBrains Mono',monospace;font-size:10px;margin-bottom:16px}
-.mrow{margin-bottom:11px}
-.mhdr{display:flex;justify-content:space-between;margin-bottom:3px}
-.mname{font-size:10px;color:#445566}
-.mval{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700}
-.btrack{height:3px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden}
-.bfill{height:100%;border-radius:2px;transition:width 0.7s cubic-bezier(0.22,1,0.36,1)}
-.rank-box{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.12)}
-.rank-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#00e5ff;letter-spacing:2px;margin-bottom:4px}
-.rank-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:#00e5ff;line-height:1.1}
-.rank-of{font-size:10px;color:#223344;margin-top:2px}
-.spark-wrap{margin-top:14px}
-#spark-canvas{display:block;border-radius:6px;background:rgba(255,255,255,0.02);margin-top:6px}
-
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#00e5ff22;border-radius:2px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoSense | Global Climate Intelligence</title>
+  <link rel="stylesheet" href="css/climate.css">
+  <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/globe.gl@2.26.0/dist/globe.gl.min.js"></script>
 </head>
+
 <body>
-<div id="app">
+  <div id="earth-glow"></div>
+
   <header>
     <div class="logo">
-      <div class="logo-mark">🌍</div>
+      <div class="logo-mark" onclick="window.location.reload()" style="cursor:pointer">GS</div>
       <div>
         <div class="logo-name">Geo<span>Sense</span></div>
         <div class="logo-tag">GLOBAL CLIMATE INTELLIGENCE</div>
       </div>
     </div>
-    <div class="live-pill">
-      <div class="live-dot"></div>
-      <span id="country-count">LIVE · -- COUNTRIES</span>
+    <div class="header-right">
+      <div class="live-pill" onclick="window.location.href='climate.html'" style="cursor:pointer">
+        <div class="live-dot"></div>
+        <span id="country-count">LIVE TELEMETRY · -- REGIONS</span>
+      </div>
     </div>
   </header>
 
   <div id="main">
     <aside id="left">
-      <div class="slabel">SELECT INDEX</div>
+      <div class="slabel">ANALYTICS ENGINE</div>
       <div id="metric-btns"></div>
       <div class="divider"></div>
-      <div class="slabel">TOP RISK</div>
+      <div class="slabel">CRITICAL IMPACT ZONES</div>
       <div id="top-list"></div>
-      <div class="divider"></div>
-      <div class="stats-box">
-        <div class="stats-ttl">GLOBAL STATS</div>
-        <div class="stats-row">Avg: <b id="s-avg">--</b></div>
-        <div class="stats-row">Extreme: <b id="s-ext" class="d">--</b></div>
-        <div class="stats-row">Severe+: <b id="s-sev" class="w">--</b></div>
-      </div>
+      <div class="divider" style="margin-top:auto;"></div>
+      <div class="dist-wrap" id="dist-stats"></div>
     </aside>
 
-    <section id="globe-wrap">
+    <main id="globe-wrap">
       <div id="globe-viz"></div>
-      <div id="metric-badge"></div>
+      <div id="metric-badge">TRACKING: PM2.5</div>
       <div id="legend">
-        <span class="leg-lbl">LOW</span>
+        <span class="leg-lbl">SAFE</span>
         <div class="leg-bar"></div>
-        <span class="leg-lbl">EXTREME</span>
+        <span class="leg-lbl">HAZARDOUS</span>
       </div>
-      <div id="hint">↻ Drag · Scroll to zoom · Click country</div>
-    </section>
+      <div id="hint">↻ Rotate globe · Scroll to zoom · Click for detail</div>
+    </main>
 
     <aside id="right">
-      <div id="right-inner">
-        <div class="det-hdr">
-          <div id="d-flag" class="det-flag">🌍</div>
-          <button class="close-btn" id="close-btn">×</button>
-        </div>
-        <div id="d-name" class="det-name"></div>
-        <div id="d-iso" class="det-iso"></div>
-        <div class="score-blk">
-          <div id="d-score" class="det-score"></div>
-          <div class="score-den">/100</div>
-        </div>
-        <div id="d-risk" class="det-risk"></div>
-        <div id="d-trend" class="det-trend"></div>
-
-        <div class="slabel" style="margin-top:14px">PRIMARY CLIMATE DRIVER</div>
-        <div id="d-cause" style="font-size:12px;color:#00e5ff;margin-top:4px;line-height:1.4;"></div>
-
-        <div class="slabel" style="margin-top:14px">LIVE LOCAL WEATHER</div>
-        <div id="d-weather" style="font-size:14px;color:#fff;margin-top:4px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">
-           <span id="d-w-icon" style="font-size:20px;">⏳</span>
-           <span id="d-w-desc">Fetching Open-Meteo...</span>
-        </div>
-
-        <div class="slabel" style="margin-top:14px">ALL METRICS</div>
-        <div id="d-metrics"></div>
-        <div class="rank-box">
-          <div class="rank-lbl">GLOBAL RANK</div>
-          <div id="d-rank" class="rank-num"></div>
-          <div id="d-rankof" class="rank-of"></div>
-        </div>
-        </div>
-      </div>
+      <div id="right-inner"><div id="detail-content"></div></div>
     </aside>
   </div>
-</div>
 
-<div id="tooltip">
-  <div class="tip-inner">
-    <div id="t-flag" class="tip-flag"></div>
-    <div>
-      <div id="t-name" class="tip-name"></div>
-      <div id="t-score" class="tip-score"></div>
-    </div>
-  </div>
-</div>
+  <script>
+    let DATA = [];
+    let GEOJSON_DATA = null;
+    let curMetric = 'pm2_5';
 
-<script>
-/* ═══════════════ DATA ═══════════════ */
-let DATA = [];
-let GEOJSON_DATA = null;
+    const METRICS = [
+      { key: 'pm10', label: 'PM10 Pollutants', icon: '🌫️' },
+      { key: 'pm2_5', label: 'PM2.5 Particles', icon: '😷' },
+      { key: 'co', label: 'Carbon Monoxide', icon: '🚗' },
+      { key: 'no2', label: 'Nitrogen Dioxide', icon: '🏭' },
+      { key: 'temp', label: 'Temperature Index', icon: '🌡️' }
+    ];
 
-const METRICS=[
-  {key:"pm10",    label:"PM10 Pollutants", icon:"🌫️", color:"#ff8c00", bg:"rgba(255,140,0,0.1)"},
-  {key:"pm2_5",   label:"PM2.5 Particles", icon:"😷", color:"#ff3355", bg:"rgba(255,51,85,0.1)"},
-  {key:"co",      label:"Carbon Monoxide", icon:"🚗", color:"#cc44ff", bg:"rgba(200,60,255,0.1)"},
-  {key:"no2",     label:"Nitrogen Dioxide",icon:"🏭", color:"#00aaff", bg:"rgba(0,170,255,0.1)"},
-  {key:"pop_den", label:"Population Density",icon:"👥", color:"#44ee88", bg:"rgba(68,238,136,0.1)"}
-];
-
-let curMetric = "pm10";
-
-/* COLOUR & LABELING */
-function sColor(s, k){
-  if(k==="pm2_5"){
-    if(s>=50)return"#ff2244";if(s>=35)return"#ff6600";if(s>=20)return"#ffaa00";if(s>=10)return"#ccdd00";return"#44ee88";
-  }else if(k==="pm10"){
-    if(s>=100)return"#ff2244";if(s>=75)return"#ff6600";if(s>=50)return"#ffaa00";if(s>=20)return"#ccdd00";return"#44ee88";
-  }else if(k==="co"){
-    if(s>=1000)return"#ff2244";if(s>=600)return"#ff6600";if(s>=300)return"#ffaa00";if(s>=150)return"#ccdd00";return"#44ee88";
-  }else if(k==="no2"){
-    if(s>=100)return"#ff2244";if(s>=50)return"#ff6600";if(s>=25)return"#ffaa00";if(s>=10)return"#ccdd00";return"#44ee88";
-  }else if(k==="pop_den"){
-    if(s>=500)return"#ff2244";if(s>=200)return"#ff6600";if(s>=50)return"#ffaa00";if(s>=20)return"#ccdd00";return"#44ee88";
-  }
-  return "#44ee88";
-}
-
-function sLabel(s, k){
-  if(k==="pm2_5"){
-    if(s>=50)return"HAZARDOUS";if(s>=35)return"UNHEALTHY";if(s>=20)return"POOR";if(s>=10)return"MODERATE";return"GOOD";
-  }else if(k==="pm10"){
-    if(s>=100)return"HAZARDOUS";if(s>=75)return"UNHEALTHY";if(s>=50)return"POOR";if(s>=20)return"MODERATE";return"GOOD";
-  }else if(k==="co"){
-    if(s>=1000)return"HAZARDOUS";if(s>=600)return"UNHEALTHY";if(s>=300)return"POOR";if(s>=150)return"MODERATE";return"GOOD";
-  }else if(k==="no2"){
-    if(s>=100)return"HAZARDOUS";if(s>=50)return"UNHEALTHY";if(s>=25)return"POOR";if(s>=10)return"MODERATE";return"GOOD";
-  }else if(k==="pop_den"){
-    if(s>=500)return"EXTREME";if(s>=200)return"VERY HIGH";if(s>=50)return"HIGH";if(s>=20)return"MODERATE";return"LOW";
-  }
-  return "GOOD";
-}
-
-/* STATS */
-function gAvg(k){if(!DATA.length)return 0;return (DATA.reduce((a,c)=>a+(c.scores[k]||0),0)/DATA.length).toFixed(1)}
-function cAbove(k,t){return DATA.filter(c=>c.scores[k]>=t).length}
-function topN(k,n){return[...DATA].sort((a,b)=>(b.scores[k]||0)-(a.scores[k]||0)).slice(0,n)}
-function rankOf(c,k){return[...DATA].sort((a,b)=>(b.scores[k]||0)-(a.scores[k]||0)).findIndex(x=>x.iso===c.iso)+1}
-
-/* ═══════════════ GLOBE GL SETUP ═══════════════ */
-let mx=-9999, my=-9999;
-document.getElementById('globe-wrap').addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY;
-  const t = document.getElementById("tooltip");
-  if(t && t.style.display==="block"){
-    t.style.left=(mx+16)+"px";t.style.top=(my-54)+"px";
-  }
-});
-
-const world = Globe()(document.getElementById('globe-viz'))
-  .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-  .backgroundColor('#04080f')
-  .polygonLabel(({ properties: d }) => {
-    let html = `<div style="background: rgba(4,8,15,0.96); border: 1px solid rgba(0,229,255,0.28); border-radius: 10px; padding: 9px 13px;">
-      <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px;">${d.ADMIN || d.NAME} (${d.ISO_A3})</div>`;
-    
-    // Look up the live DATA instance
-    const countryData = DATA.find(c => c.iso === d.ISO_A3);
-    if(countryData) {
-       html += `<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-bottom: 2px;">${METRICS.find(m=>m.key==curMetric).label}: <span style="color:${sColor(countryData.scores[curMetric], curMetric)}; font-weight:bold;">${countryData.scores[curMetric]}</span></div>`;
-    } else {
-       html += `<div style="font-size: 10px; color: #8899aa;">No Data</div>`;
-    }
-    return html + '</div>';
-  })
-  .polygonCapColor(feat => {
-    const countryData = DATA.find(c => c.iso === feat.properties.ISO_A3);
-    if(!countryData) return 'rgba(20,20,30,0.5)';
-    const val = countryData.scores[curMetric];
-    const col = sColor(val, curMetric);
-    return col + '55'; // Choropleth transparency
-  })
-  .polygonSideColor(() => 'rgba(255, 255, 255, 0.05)')
-  .polygonStrokeColor(() => 'rgba(255, 255, 255, 0.4)')
-  .polygonAltitude(feat => DATA.find(c => c.iso === feat.properties.ISO_A3) ? 0.015 : 0.005)
-  .onPolygonHover((feat, prevFeat) => {
-    world.polygonAltitude(d => d === feat ? 0.04 : (DATA.find(c => c.iso === d.properties.ISO_A3) ? 0.015 : 0.005));
-    // custom tooltip removed in favor of built-in polygonLabel
-    const t = document.getElementById("tooltip"); if(t) t.style.display="none";
-  })
-  .onPolygonClick((feat) => {
-    const countryData = DATA.find(c => c.iso === feat.properties.ISO_A3);
-    if(countryData) openDetail(countryData);
-  });
-
-
-let airQualityCache = {}; // Cache to avoid over-fetching Air Quality API
-
-Promise.all([
-  fetch('//unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson').then(r => r.json()),
-  fetch('https://restcountries.com/v3.1/all?fields=cca3,latlng,population,area').then(r => r.json())
-]).then(([geojson, restCountries]) => {
-  // Build a fast lookup for RestCountries
-  const rcMap = {};
-  restCountries.forEach(rc => rcMap[rc.cca3] = rc);
-
-  geojson.features.forEach(f => {
-    const iso = f.properties.ISO_A3;
-    const rc = rcMap[iso];
-    if(rc && rc.latlng && rc.latlng.length === 2) {
-      const lat = rc.latlng[0];
-      const lng = rc.latlng[1];
-      const popDensity = rc.area ? (rc.population / rc.area) : 0;
-      
-      // Store exact clickable centroids onto polygon properties
-      f.properties.centroid_lat = lat;
-      f.properties.centroid_lng = lng;
-
-      DATA.push({
-        iso: iso,
-        name: f.properties.ADMIN || f.properties.NAME,
-        flag: "🌍",
-        cont: f.properties.CONTINENT,
-        lat: lat,
-        lng: lng,
-        pop: rc.population,
-        area: rc.area,
-        scores: { 
-          pop_den: Math.round(popDensity * 10) / 10,
-          pm10: 0, pm2_5: 0, co: 0, no2: 0 // Will populate on demand or mock lightly if no data fetched yet
-        },
-        cause: popDensity > 200 ? "High urban density & corresponding infrastructure emissions." : "Localized pollution sources and geography."
+    const world = Globe()(document.getElementById('globe-viz'))
+      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+      .backgroundColor('#020408')
+      .showAtmosphere(true)
+      .atmosphereColor('lightskyblue')
+      .atmosphereAltitude(0.15)
+      .polygonCapColor(f => '#10b98144')
+      .polygonStrokeColor(() => 'rgba(255, 255, 255, 0.1)')
+      .polygonAltitude(0.012)
+      .onPolygonClick(f => {
+        const c = DATA.find(x => x.iso === f.properties.ISO_A3);
+        if (c) openDetail(c);
       });
-    }
-  });
-  
-  // Clean up DATA array to only valid countries and sort alphabetically
-  DATA = DATA.filter(d => !isNaN(d.lat) && !isNaN(d.lng)).sort((a,b)=>a.name.localeCompare(b.name));
-  
-  GEOJSON_DATA = geojson;
-  world.polygonsData(geojson.features);
-  
-  // Let's prepopulate the global top list stats by fetching air quality globally for the core list to avoid an empty dashboard UI
-  // Note: Open-Meteo allows heavy fetching, but we'll do an initial bulk mock on scores to render the dashboard, then accurate live queries on click
-  DATA.forEach(d => {
-     d.scores.pm10 = Math.round(Math.max(5, (d.scores.pop_den * Math.random() * 0.2)));
-     d.scores.pm2_5 = Math.round(d.scores.pm10 * 0.6);
-     d.scores.co = Math.round(d.scores.pop_den * 2 * Math.random());
-     d.scores.no2 = Math.round(d.scores.pm2_5 * 0.8 * Math.random());
-  });
 
-  buildMetricBtns();
-  selectMetric('pm2_5'); // Auto-select PM2.5 to trigger UI refresh
-});
+    // Cloud layer
+    const CLOUDS_IMG_URL = 'https://unpkg.com/three-globe/example/img/earth-clouds.png';
+    const CLOUDS_ALT = 0.004;
+    const CLOUDS_ROTATION_SPEED = -0.006; 
 
-world.controls().autoRotate = true;
-world.controls().autoRotateSpeed = 0.5;
-world.controls().enableDamping = true;
+    new THREE.TextureLoader().load(CLOUDS_IMG_URL, cloudsTexture => {
+      const clouds = new THREE.Mesh(
+        new THREE.SphereGeometry(world.getGlobeRadius() * (1 + CLOUDS_ALT), 75, 75),
+        new THREE.MeshPhongMaterial({ map: cloudsTexture, transparent: true, opacity: 0.8 })
+      );
+      world.scene().add(clouds);
+      (function rotateClouds() {
+        clouds.rotation.y += CLOUDS_ROTATION_SPEED * Math.PI / 180;
+        requestAnimationFrame(rotateClouds);
+      })();
+    });
 
-window.addEventListener('resize', () => {
-  const wrap = document.getElementById('globe-wrap');
-  if(wrap) world.width(wrap.offsetWidth).height(wrap.offsetHeight);
-});
-setTimeout(() => {
-  const wrap = document.getElementById('globe-wrap');
-  if(wrap) world.width(wrap.offsetWidth).height(wrap.offsetHeight);
-}, 100);
+    world.controls().autoRotate = true;
+    world.controls().autoRotateSpeed = 0.5;
 
-function spinTo(lat, lng) {
-  world.pointOfView({ lat, lng, altitude: 1.2 }, 1000);
-}
-
-/* ═══════════════ UI ═══════════════ */
-function buildMetricBtns(){
-  const el=document.getElementById("metric-btns");el.innerHTML="";
-  METRICS.forEach(m=>{
-    const avg=gAvg(m.key);
-    const btn=document.createElement("button");btn.className="idx-btn";btn.id="mb-"+m.key;
-    btn.innerHTML=`<span class="idx-icon">${m.icon}</span><div class="idx-inf"><div class="idx-lbl">${m.label}</div><div class="idx-avg">avg ${avg}/100</div></div><div class="idx-val" style="color:${m.color}">${avg}</div>`;
-    btn.onclick=()=>selectMetric(m.key);el.appendChild(btn);
-  });
-}
-
-function selectMetric(key){
-  curMetric=key;const m=METRICS.find(x=>x.key===key);
-  METRICS.forEach(x=>{const b=document.getElementById("mb-"+x.key);if(!b)return;b.classList.toggle("active",x.key===key);b.style.borderColor=x.key===key?m.color+"55":"";b.style.background=x.key===key?m.bg:""});
-  const mb=document.getElementById("metric-badge");if(mb){mb.textContent=m.icon+" "+m.label.toUpperCase();mb.style.color=m.color;mb.style.borderColor=m.color+"44"}
-  updateTopList();updateStats();if(selCountry)openDetail(selCountry);
-}
-
-function updateTopList(){
-  const el=document.getElementById("top-list");el.innerHTML="";
-  topN(curMetric,6).forEach((c,i)=>{
-    const s=c.scores[curMetric];
-    const row=document.createElement("div");row.className="top-row";
-    row.innerHTML=`<div class="top-rank">#${i+1}</div><div class="top-flag">${c.flag}</div><div class="top-name">${c.name}</div><div class="top-score" style="color:${sColor(s)}">${s}</div>`;
-    row.onclick=()=>openDetail(c);el.appendChild(row);
-  });
-}
-
-function updateStats(){
-  const s=id=>document.getElementById(id);
-  if(s("s-avg"))s("s-avg").textContent=gAvg(curMetric)+"/100";
-  if(s("s-ext"))s("s-ext").textContent=cAbove(curMetric,80);
-  if(s("s-sev"))s("s-sev").textContent=cAbove(curMetric,65);
-  if(s("country-count"))s("country-count").textContent="LIVE · "+DATA.length+" COUNTRIES";
-}
-
-let selCountry=null;
-function openDetail(c){
-  world.controls().autoRotate = false;
-  selCountry=c;selISO=c.iso;spinTo(c.lat,c.lng);
-  
-  const sid=document.getElementById.bind(document);
-  sid("d-flag").textContent=c.flag||"🌍";
-  sid("d-name").textContent=c.name;
-  sid("d-iso").textContent=c.iso+" · "+(c.cont||"Global");
-  
-  // Refresh UI Function to call after data is modified
-  const refreshDetailUI = () => {
-      const s=c.scores[curMetric]||0,col=sColor(s,curMetric),lbl=sLabel(s,curMetric);
-      sid("d-score").textContent=s;sid("d-score").style.color=col;
-      sid("d-risk").textContent=lbl+" RISK";sid("d-risk").style.color=col;
-      const dm=sid("d-metrics");dm.innerHTML="";
-      METRICS.forEach(m=>{const ms=c.scores[m.key]||0;const mc=sColor(ms,m.key);const row=document.createElement("div");row.className="mrow";row.innerHTML=`<div class="mhdr"><span class="mname">${m.icon} ${m.label}</span><span class="mval" style="color:${mc}">${ms}</span></div><div class="btrack"><div class="bfill" style="width:${ms}%;background:${mc}"></div></div>`;dm.appendChild(row)});
-      sid("d-rank").textContent="#"+rankOf(c,curMetric);
-      sid("d-rankof").textContent="of "+DATA.length+" countries";
-  };
-
-  if(sid("d-cause")) sid("d-cause").textContent = c.cause || "Multiple compounding factors.";
-  
-  if(sid("d-w-icon")){
-    sid("d-w-icon").textContent = "⏳";
-    sid("d-w-desc").textContent = "Fetching Live APIs...";
-    
-    // Fetch Weather
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${parseFloat(c.lat).toFixed(2)}&longitude=${parseFloat(c.lng).toFixed(2)}&current_weather=true`)
-      .then(r=>r.json())
-      .then(data => {
-         if(data && data.current_weather){
-           const w = data.current_weather;
-           sid("d-w-icon").textContent = w.temperature > 30 ? "🔥" : w.temperature < 5 ? "❄️" : "🌡️";
-           sid("d-w-desc").textContent = `${w.temperature}°C (Wind: ${w.windspeed}km/h)`;
-         } else {
-           sid("d-w-icon").textContent = "❌";
-           sid("d-w-desc").textContent = "Unavailable";
-         }
-      }).catch(e => {
-         sid("d-w-icon").textContent = "❌";
-         sid("d-w-desc").textContent = "API Err";
+    fetch('https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson').then(r => r.json()).then(geojson => {
+      GEOJSON_DATA = geojson;
+      geojson.features.forEach(f => {
+        DATA.push({
+          iso: f.properties.ISO_A3,
+          name: f.properties.ADMIN,
+          lat: f.properties.LABEL_Y,
+          lng: f.properties.LABEL_X,
+          scores: { pm10: 20, pm2_5: 15, co: 10, no2: 5, temp: 22 }
+        });
       });
-      
-    // Fetch Air Quality if not cached
-    if(!airQualityCache[c.iso]) {
-        fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${parseFloat(c.lat).toFixed(2)}&longitude=${parseFloat(c.lng).toFixed(2)}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide`)
-          .then(r=>r.json())
-          .then(data => {
-             if(data && data.current){
-                 c.scores.pm10 = Math.round(data.current.pm10 || c.scores.pm10);
-                 c.scores.pm2_5 = Math.round(data.current.pm2_5 || c.scores.pm2_5);
-                 c.scores.co = Math.round(data.current.carbon_monoxide || c.scores.co);
-                 c.scores.no2 = Math.round(data.current.nitrogen_dioxide || c.scores.no2);
-                 
-                 // Generate a real cause logic
-                 if (c.scores.pm10 > 50) c.cause = "High atmospheric particulate accumulation.";
-                 if (c.scores.co > 500) c.cause = "Severe industrial & vehicular carbon monoxide.";
-                 
-                 airQualityCache[c.iso] = true;
-                 refreshDetailUI();
-                 // Refresh Globe Map Colors
-                 world.polygonCapColor(world.polygonCapColor());
-             }
-          }).catch(e => console.error(e));
+      world.polygonsData(geojson.features);
+      buildUI();
+    });
+
+    function buildUI() {
+        const mBtns = document.getElementById('metric-btns');
+        mBtns.innerHTML = '';
+        METRICS.forEach(m => {
+            const btn = document.createElement('div');
+            btn.className = `metric-btn ${curMetric === m.key ? 'active' : ''}`;
+            btn.onclick = () => { curMetric = m.key; buildUI(); };
+            btn.innerHTML = `<div class="btn-title">${m.icon} ${m.label}</div><div class="btn-value">SENSING...</div>`;
+            mBtns.appendChild(btn);
+        });
+        document.getElementById('country-count').textContent = `LIVE TELEMETRY · ${DATA.length} REGIONS`;
     }
-  }
 
-  // Initial draw
-  refreshDetailUI();
-  document.getElementById("right").classList.add("open");
-}
-
-function closeDetail(){
-  world.controls().autoRotate = true;
-  selCountry=null;selISO=null;document.getElementById("right").classList.remove("open")
-}
-
-
-
-function updateTooltip(country,sx,sy){
-  const el=document.getElementById("tooltip");if(!el)return;
-  if(!country){el.style.display="none";return}
-  const s=country.scores[curMetric],col=sColor(s);
-  document.getElementById("t-flag").textContent=country.flag;
-  document.getElementById("t-name").textContent=country.name;
-  const ts=document.getElementById("t-score");ts.textContent=s+"/100 · "+sLabel(s);ts.style.color=col;
-  el.style.display="block";el.style.left=(sx+16)+"px";el.style.top=(sy-54)+"px";
-}
-
-/* Mode badge updater removed */
-
-/* ═══════════════ EVENTS ═══════════════ */
-document.getElementById("close-btn").addEventListener("click",closeDetail);
-
-/* ═══════════════ INIT ═══════════════ */
-buildMetricBtns();selectMetric("pm2_5");
-</script>
+    function openDetail(c) {
+        document.getElementById('detail-content').innerHTML = `<div class="det-name">${c.name}</div><div class="det-iso">${c.iso}</div><button onclick="closeDetail()">CLOSE</button>`;
+        document.getElementById('right').classList.add('active');
+        world.controls().autoRotate = false;
+    }
+    function closeDetail() {
+        document.getElementById('right').classList.remove('active');
+        world.controls().autoRotate = true;
+    }
+    window.addEventListener('resize', () => {
+      const wrap = document.getElementById('globe-wrap');
+      world.width(wrap.offsetWidth).height(wrap.offsetHeight);
+    });
+    setTimeout(() => {
+      const wrap = document.getElementById('globe-wrap');
+      world.width(wrap.offsetWidth).height(wrap.offsetHeight);
+    }, 500);
+  </script>
 </body>
 </html>

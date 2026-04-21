@@ -29,38 +29,6 @@ A live satellite tracker that fetches real Two-Line Element (TLE) data from Cele
 
 ---
 
-## Project Structure
-climate_change-app/
-│
-├── index.html ← Climate Risk Globe (main landing view)
-├── climate.html ← Pulse Dashboard (choropleth + weather API)
-├── orbital.html ← Live Satellite Orbital Tracker
-├── parse_geojson.js ← GeoJSON parsing utility script
-├── update_globe.js ← Globe update helper script
-├── test.js ← Development/debug test script
-│
-├── css/
-│ ├── reset.css ← Browser normalization / base reset
-│ ├── theme.css ← All design tokens (colours, fonts, spacing as CSS variables)
-│ ├── layout.css ← Page structure, flex/grid, responsive breakpoints
-│ ├── components.css ← All UI widgets (buttons, panels, tooltips, inspector)
-│ ├── animations.css ← Keyframe animations and transitions
-│ └── climate.css ← Shared styles for the Pulse Dashboard view
-│
-├── js/
-│ ├── data.js ← Country list and metric definitions (static data layer)
-│ ├── engine.js ← Scoring engine, colour mapping, data processing
-│ ├── globe.js ← Globe canvas rendering and interaction logic
-│ ├── ui.js ← DOM construction and event handlers
-│ ├── main.js ← App entry point (boots everything)
-│ ├── climate.js ← Core logic for the Pulse Dashboard
-│ ├── world-simple.geojson ← Low-resolution world country polygons
-│ ├── world-medium.geojson ← Medium-resolution world country polygons
-│ └── world-detail.geojson ← High-resolution world country polygons
-│
-└── scripts/
-└── fetch_test.py ← Python utility for testing API/data fetches
-
 ## How to Run It Locally
 
 Since this is a fully static project with no npm, build step, or server dependency, running it locally takes about 30 seconds.

@@ -1,4 +1,4 @@
-# 🌍 GeoSense — Global Climate Intelligence Platform
+# 🌍 GeoSense — Climate Change visualization platform
 
 **Live Demo:** [vsv2797.github.io/climate_change-app](https://vsv2797.github.io/climate_change-app)
 

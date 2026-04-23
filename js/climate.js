@@ -109,23 +109,16 @@ const world = Globe()(document.getElementById('globe-viz'))
   .polygonCapColor(feat => {
     const c = DATA.find(c => c.iso === feat.properties.ISO_A3);
     if (!c) return 'rgba(20,30,40,0.1)';
-    if (curMetric === 'temp') return 'rgba(0,0,0,0.0)'; // fully transparent so heatmap shines through
     const val = c.scores[curMetric] || 0;
+    if (curMetric === 'temp') return getThermalColor(val, 0.7); 
     return sColor(val, curMetric) + 'a0'; 
   })
   .polygonSideColor(feat => {
     return 'rgba(0, 0, 0, 0.5)';
   })
   .polygonStrokeColor(feat => {
-      // Show borders so they "fill" the country mentally!
       return 'rgba(255, 255, 255, 0.15)';
   })
-  .heatmapPointLat('lat')
-  .heatmapPointLng('lng')
-  .heatmapPointWeight('weight')
-  .heatmapBaseAltitude(0.01)
-  .heatmapBandwidth(2)
-  .heatmapColorSaturation(2.5)
   .onPolygonHover((feat, prevFeat) => {
     world.polygonAltitude(d => d === feat ? 0.06 : (DATA.find(c => c.iso === d.properties.ISO_A3) ? 0.012 : 0.005));
     if (feat) {
@@ -324,7 +317,6 @@ function selectMetric(key) {
     b.classList.toggle("active", x.key === key); 
   });
   
-  const mb = document.getElementById("metric-badge"); 
   if (mb) { 
     mb.innerHTML = `<span style="opacity:0.7">TRACKING:</span> ${m.label.toUpperCase()}`; 
   }
@@ -333,59 +325,7 @@ function selectMetric(key) {
   updateTopList(); 
   if (selCountry) openDetail(selCountry);
   
-  // Trigger the massive polygon transformation animation!
-  if (showSatellite && curMetric !== "temp") {
-      world.polygonsData([]); 
-  } else {
-      world.polygonsData([...GEOJSON_DATA.features]);
-  }
-
-  if (curMetric === "temp") {
-      let heatData = [];
-      DATA.forEach(c => {
-         let w = (c.scores.temp + 30) / 80;
-         w = Math.max(0.05, Math.min(1.0, w));
-         
-         const feat = GEOJSON_DATA.features.find(f => f.properties.ISO_A3 === c.iso);
-         if (feat && feat.geometry) {
-             function emitRing(ring) {
-                 // Dynamically sample the border points natively aligned to the map mesh
-                 const step = Math.max(1, Math.floor(ring.length / 15)); 
-                 for (let i = 0; i < ring.length; i += step) {
-                     heatData.push({
-                         lat: ring[i][1],
-                         lng: ring[i][0],
-                         weight: w
-                     });
-                 }
-             }
-             if (feat.geometry.type === 'Polygon') {
-                 feat.geometry.coordinates.forEach(emitRing);
-             } else if (feat.geometry.type === 'MultiPolygon') {
-                 feat.geometry.coordinates.forEach(poly => poly.forEach(emitRing));
-             }
-             
-             // Inject the Core centroid recursively to solidfy interior country glow
-             if (c.lat && c.lng) {
-                 heatData.push({ lat: parseFloat(c.lat), lng: parseFloat(c.lng), weight: w });
-                 
-                 // If enormous continent-tier country, seed intermediate density interpolations
-                 if (c.area > 300000 && feat.geometry.type === 'Polygon') {
-                     const ring = feat.geometry.coordinates[0];
-                     const step = Math.max(1, Math.floor(ring.length / 8));
-                     for (let i = 0; i < ring.length; i += step) {
-                         const midLat = (parseFloat(c.lat) + ring[i][1]) / 2;
-                         const midLng = (parseFloat(c.lng) + ring[i][0]) / 2;
-                         heatData.push({ lat: midLat, lng: midLng, weight: w });
-                     }
-                 }
-             }
-         }
-      });
-      world.heatmapsData([heatData]);
-  } else {
-      world.heatmapsData([]);
-  }
+  world.polygonCapColor(world.polygonCapColor()); 
 }
 
 function getDistributionData(metricKey) {

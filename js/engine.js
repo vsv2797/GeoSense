@@ -16,24 +16,17 @@
    ═══════════════════════════════════════════════════════════════ */
 "use strict";
 
-/* ── Seeded RNG (reproducible demo scores) ─────────────────────
-   TODO [future]: replace generateScores() with a real API fetch  */
-function seededRng(seed) {
-  let s = seed;
-  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-}
-
-/* ── Score generation ──────────────────────────────────────────
-   Returns { heat, drought, precip, cri } each 0–100
-   Swap this function body for a fetch() call to use real data.  */
+/* ── GeoSense Live Telemetry Data ──────────────────────────────
+   DEPRECATION NOTICE: 
+   The seeded simulation engine below is deprecated and retained 
+   only for architectural reference. The production dashboards 
+   in climate.html and index.html are now exclusively powered by 
+   the GeoSense Batch Fetch Engine (Open-Meteo & Air Quality APIs). 
+   ───────────────────────────────────────────────────────────── */
 function generateScores(idx) {
-  const r = seededRng(idx * 137 + 42);
-  return {
-    heat:    Math.round(r() * 100),
-    drought: Math.round(r() * 100),
-    precip:  Math.round(r() * 100),
-    cri:     Math.round(r() * 100),
-  };
+  // Access DATA from global scope populated by live fetch
+  if (DATA && DATA[idx]) return DATA[idx].scores;
+  return { heat: 0, drought: 0, precip: 0, cri: 0 };
 }
 
 /* ── 90-day sparkline history ──────────────────────────────────

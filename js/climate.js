@@ -317,6 +317,7 @@ function selectMetric(key) {
     b.classList.toggle("active", x.key === key); 
   });
   
+  const mb = document.getElementById("metric-badge");
   if (mb) { 
     mb.innerHTML = `<span style="opacity:0.7">TRACKING:</span> ${m.label.toUpperCase()}`; 
   }

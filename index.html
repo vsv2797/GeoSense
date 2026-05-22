@@ -67,19 +67,13 @@
       { key: 'temp', label: 'Temperature Index', icon: '🌡️' }
     ];
 
-    const world = Globe()(document.getElementById('globe-viz'))
-      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-      .backgroundColor('#020408')
-      .showAtmosphere(true)
-      .atmosphereColor('lightskyblue')
-      .atmosphereAltitude(0.15)
-      .polygonCapColor(feat => {
+    // Named color function — must be a variable so we can re-assign it to
+    // force globe.gl to repaint the choropleth after data arrives.
+    function capColor(feat) {
         const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
-        if (!c) return 'rgba(2, 4, 8, 0.2)';
+        if (!c || !c.synced) return 'rgba(2, 4, 8, 0.2)';
         const val = c.scores[curMetric] || 0;
         if (curMetric === 'temp') {
-            // High-fidelity thermal gradient for Temperature Choropleth
             let t = (val + 30) / 80;
             t = Math.max(0, Math.min(1, t));
             const colors = [[139, 92, 246], [59, 130, 246], [16, 185, 129], [245, 158, 11], [239, 68, 68]];
@@ -91,15 +85,26 @@
             const b = Math.round(colors[i][2] * (1-frac) + colors[i+1][2] * frac);
             return `rgba(${r}, ${g}, ${b}, 0.7)`;
         }
-        
-        // Dynamic scoring for air quality metrics
         const colors = ['#64748b', '#10b981', '#f59e0b', '#ef4444'];
         let ci = 0;
         if (val >= 20) ci = 1;
         if (val >= 50) ci = 2;
         if (val >= 80) ci = 3;
         return colors[ci] + 'a0';
-      })
+    }
+
+    // Wrapper that creates a fresh function reference each call,
+    // which is required for globe.gl to detect a change and repaint.
+    function refreshColors() { world.polygonCapColor(feat => capColor(feat)); }
+
+    const world = Globe()(document.getElementById('globe-viz'))
+      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+      .backgroundColor('#020408')
+      .showAtmosphere(true)
+      .atmosphereColor('lightskyblue')
+      .atmosphereAltitude(0.15)
+      .polygonCapColor(feat => capColor(feat))
       .polygonStrokeColor(() => 'rgba(255, 255, 255, 0.1)')
       .polygonAltitude(0.012)
       .onPolygonClick(f => {
@@ -170,7 +175,7 @@
                 c.synced = true;
              });
              buildUI();
-             world.polygonCapColor(world.polygonCapColor());
+             refreshColors();
           }).catch(err => console.error("Index Batch err", err));
       }
     });
@@ -209,7 +214,7 @@
         const mb = document.getElementById('metric-badge');
         if (mb) mb.textContent = `TRACKING: ${METRICS.find(m => m.key === key).label.toUpperCase()}`;
         buildUI();
-        world.polygonCapColor(world.polygonCapColor());
+        refreshColors();
     }
 
     function openDetail(c) {

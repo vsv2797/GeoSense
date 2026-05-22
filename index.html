@@ -82,7 +82,7 @@
             const b = Math.round(colors[i][2] * (1-frac) + colors[i+1][2] * frac);
             return `rgba(${r}, ${g}, ${b}, 0.7)`;
         }
-        const colors = ['#64748b', '#10b981', '#f59e0b', '#ef4444'];
+        const colors = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
         let ci = 0;
         if (val >= 20) ci = 1;
         if (val >= 50) ci = 2;
@@ -104,6 +104,23 @@
       .polygonCapColor(feat => capColor(feat))
       .polygonStrokeColor(() => 'rgba(255, 255, 255, 0.1)')
       .polygonAltitude(0.012)
+      .polygonLabel(feat => {
+        const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
+        if (!c) return `<div class="tip-inner"><div class="tip-name">${feat.properties.ADMIN}</div></div>`;
+        const val = c.synced ? c.scores[curMetric] : 'Loading...';
+        const unit = curMetric === 'temp' ? '°C' : 'µg/m³';
+        return `
+          <div class="tip-inner" style="background: #0a0f18; border: 1px solid #1f2d3d; padding: 8px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border-radius: 2px;">
+            <span class="tip-flag" style="font-family: 'Roboto Mono', monospace; color: #94a3b8; font-size: 10px; background: #1f2d3d; padding: 2px 4px; border-radius: 2px;">${c.iso}</span>
+            <div>
+              <div class="tip-name" style="font-size: 11px; font-weight: 600; line-height: 1.2; margin-bottom: 2px; color: #f8fafc;">${c.name}</div>
+              <div class="tip-score" style="font-family: 'Roboto Mono', monospace; font-size: 10px; font-weight: 700; color: #00e5ff;">
+                ${METRICS.find(m => m.key === curMetric).label}: ${val}${c.synced ? ' ' + unit : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      })
       .onPolygonClick(f => {
         const c = DATA.find(x => x.iso === f.properties.ISO_A3);
         if (c) openDetail(c);
@@ -129,14 +146,47 @@
     world.controls().autoRotate = true;
     world.controls().autoRotateSpeed = 0.5;
 
+    function getCountryCenter(f) {
+      const geom = f.geometry;
+      if (!geom) return { lat: 0, lng: 0 };
+      
+      let bestRing = null;
+      if (geom.type === 'Polygon') {
+        bestRing = geom.coordinates[0];
+      } else if (geom.type === 'MultiPolygon') {
+        let maxPoints = 0;
+        geom.coordinates.forEach(poly => {
+          const ring = poly[0];
+          if (ring && ring.length > maxPoints) {
+            maxPoints = ring.length;
+            bestRing = ring;
+          }
+        });
+      }
+      
+      if (bestRing && bestRing.length > 0) {
+        let latSum = 0, lngSum = 0;
+        bestRing.forEach(coord => {
+          lngSum += coord[0];
+          latSum += coord[1];
+        });
+        return {
+          lat: latSum / bestRing.length,
+          lng: lngSum / bestRing.length
+        };
+      }
+      return { lat: 0, lng: 0 };
+    }
+
     fetch('https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson').then(r => r.json()).then(geojson => {
       GEOJSON_DATA = geojson;
       geojson.features.forEach(f => {
+        const center = getCountryCenter(f);
         DATA.push({
           iso: f.properties.ISO_A3,
           name: f.properties.ADMIN,
-          lat: f.properties.LABEL_Y,
-          lng: f.properties.LABEL_X,
+          lat: center.lat,
+          lng: center.lng,
           synced: false,
           scores: { pm10: 0, pm2_5: 0, co: 0, no2: 0, temp: 0 }
         });
@@ -200,6 +250,61 @@
             item.innerHTML = `<div class="leader-content"><div class="leader-country"><span class="leader-flag">${c.iso}</span> ${c.name}</div><div class="leader-score">${c.scores[curMetric]}</div></div>`;
             topList.appendChild(item);
         });
+
+        const distStats = document.getElementById('dist-stats');
+        if (distStats) {
+            const syncedData = DATA.filter(x => x.synced);
+            if (syncedData.length > 0) {
+                const values = syncedData.map(x => x.scores[curMetric]);
+                const avg = Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
+                const max = Math.max(...values);
+                const min = Math.min(...values);
+                const unit = curMetric === 'temp' ? '°C' : 'µg/m³';
+                
+                const getPercent = (v) => {
+                    if (curMetric === 'temp') {
+                        return Math.max(0, Math.min(100, ((v + 10) / 55) * 100));
+                    }
+                    return Math.max(0, Math.min(100, (v / 100) * 100));
+                };
+
+                const avgPercent = getPercent(avg);
+                const maxPercent = getPercent(max);
+                const minPercent = getPercent(min);
+                
+                distStats.innerHTML = `
+                    <div class="slabel">GLOBAL TELEMETRY STATS</div>
+                    <div class="dist-row">
+                        <span>GLOBAL AVERAGE</span>
+                        <span>${avg} ${unit}</span>
+                    </div>
+                    <div class="dist-bar-bg">
+                        <div class="dist-bar-fill" style="width: ${avgPercent}%; background: #00e5ff;"></div>
+                    </div>
+                    <div class="dist-row">
+                        <span>HIGHEST REGION</span>
+                        <span>${max} ${unit}</span>
+                    </div>
+                    <div class="dist-bar-bg">
+                        <div class="dist-bar-fill" style="width: ${maxPercent}%; background: #ef4444;"></div>
+                    </div>
+                    <div class="dist-row">
+                        <span>LOWEST REGION</span>
+                        <span>${min} ${unit}</span>
+                    </div>
+                    <div class="dist-bar-bg">
+                        <div class="dist-bar-fill" style="width: ${minPercent}%; background: #10b981;"></div>
+                    </div>
+                `;
+            } else {
+                distStats.innerHTML = `
+                    <div class="slabel">GLOBAL TELEMETRY STATS</div>
+                    <div style="font-family: 'Roboto Mono', monospace; font-size: 11px; color: #64748b;">
+                        Connecting to climate intelligence network...
+                    </div>
+                `;
+            }
+        }
     }
 
     function selectMetric(key) {
@@ -211,10 +316,82 @@
     }
 
     function openDetail(c) {
-        document.getElementById('detail-content').innerHTML = `<div class="det-name">${c.name}</div><div class="det-iso">${c.iso}</div><button onclick="closeDetail()">CLOSE</button>`;
+        const val = c.scores[curMetric] || 0;
+        const unit = curMetric === 'temp' ? '°C' : 'µg/m³';
+        const rank = [...DATA].sort((a,b) => b.scores[curMetric] - a.scores[curMetric]).findIndex(x => x.iso === c.iso) + 1;
+        const total = DATA.length;
+
+        let risk = 'SAFE';
+        let riskColor = '#10b981';
+        if (curMetric === 'temp') {
+            if (val > 35) { risk = 'EXTREME HEAT'; riskColor = '#ef4444'; }
+            else if (val > 25) { risk = 'WARM'; riskColor = '#f59e0b'; }
+            else if (val > 10) { risk = 'TEMPERATE'; riskColor = '#10b981'; }
+            else { risk = 'COOL'; riskColor = '#3b82f6'; }
+        } else {
+            if (val >= 80) { risk = 'HAZARDOUS'; riskColor = '#8b5cf6'; }
+            else if (val >= 50) { risk = 'UNHEALTHY'; riskColor = '#ef4444'; }
+            else if (val >= 20) { risk = 'MODERATE'; riskColor = '#f59e0b'; }
+            else { risk = 'SAFE'; riskColor = '#10b981'; }
+        }
+
+        const detailsHtml = `
+            <div class="det-hdr">
+                <span class="det-flag">${c.iso}</span>
+                <button class="close-btn" onclick="closeDetail()">×</button>
+            </div>
+            <div class="det-name">${c.name}</div>
+            <div class="det-iso">LAT: ${parseFloat(c.lat).toFixed(2)} · LNG: ${parseFloat(c.lng).toFixed(2)}</div>
+            
+            <div class="score-blk">
+                <span class="det-score">${val}</span>
+                <span class="score-den">${unit}</span>
+            </div>
+            <div class="det-risk" style="color: ${riskColor}">${risk}</div>
+
+            <div class="info-box">
+                <span>ℹ️</span>
+                <div>Real-time climate telemetry synced from Open-Meteo API.</div>
+            </div>
+
+            <div class="slabel">ALL METRICS</div>
+            <div class="mlist-row">
+                <div class="mlist-lbl">🌫️ PM10</div>
+                <div class="mlist-val">${c.scores.pm10} µg/m³</div>
+            </div>
+            <div class="mlist-row">
+                <div class="mlist-lbl">😷 PM2.5</div>
+                <div class="mlist-val">${c.scores.pm2_5} µg/m³</div>
+            </div>
+            <div class="mlist-row">
+                <div class="mlist-lbl">🚗 Carbon Monoxide</div>
+                <div class="mlist-val">${c.scores.co} µg/m³</div>
+            </div>
+            <div class="mlist-row">
+                <div class="mlist-lbl">🏭 Nitrogen Dioxide</div>
+                <div class="mlist-val">${c.scores.no2} µg/m³</div>
+            </div>
+            <div class="mlist-row">
+                <div class="mlist-lbl">🌡️ Temperature</div>
+                <div class="mlist-val">${c.scores.temp} °C</div>
+            </div>
+
+            <div class="rank-box">
+                <div class="rank-lbl">GLOBAL RANK</div>
+                <div>
+                    <span class="rank-num">#${rank}</span>
+                    <span class="rank-of">of ${total}</span>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('detail-content').innerHTML = detailsHtml;
         document.getElementById('right').classList.add('active');
         world.controls().autoRotate = false;
+        
+        world.pointOfView({ lat: c.lat, lng: c.lng, altitude: 1.2 }, 1000);
     }
+
     function closeDetail() {
         document.getElementById('right').classList.remove('active');
         world.controls().autoRotate = true;

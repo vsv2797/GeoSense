@@ -4,152 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GeoSense | Global Climate Intelligence</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/climate.css">
   <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
   <script src="https://unpkg.com/globe.gl@2.26.0/dist/globe.gl.min.js"></script>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    ::-webkit-scrollbar{width:4px}
-    ::-webkit-scrollbar-track{background:#0a0f18}
-    ::-webkit-scrollbar-thumb{background:#1f2d3d}
-    html,body{width:100%;height:100%;overflow:hidden;background:#020408;font-family:'Rajdhani',sans-serif;color:#e2e8f0}
-
-    /* ── HEADER ── */
-    header{
-      position:absolute;top:0;left:0;width:100%;
-      padding:16px 24px;display:flex;justify-content:space-between;align-items:center;
-      z-index:20;background:rgba(2,4,8,0.85);border-bottom:1px solid #0f172a;
-      backdrop-filter:blur(8px);
-    }
-    .logo{display:flex;align-items:center;gap:12px;cursor:pointer}
-    .logo-mark{
-      width:36px;height:36px;background:#00e5ff;color:#020408;
-      display:flex;align-items:center;justify-content:center;
-      font-weight:700;font-size:14px;letter-spacing:0.5px;border-radius:2px;
-    }
-    .logo-name{font-size:20px;font-weight:700;letter-spacing:-0.5px}
-    .logo-name span{color:#00e5ff}
-    .logo-tag{font-family:'Roboto Mono',monospace;font-size:9px;color:#334155;letter-spacing:3px;margin-top:1px}
-    .header-right{display:flex;align-items:center;gap:12px}
-    .live-pill{
-      display:flex;align-items:center;gap:8px;
-      background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);
-      padding:6px 14px;border-radius:2px;
-      font-family:'Roboto Mono',monospace;font-size:10px;color:#00e5ff;letter-spacing:1px;
-    }
-    .live-dot{width:6px;height:6px;border-radius:50%;background:#00e5ff;animation:blink 1.4s infinite}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-
-    /* ── LAYOUT ── */
-    #main{position:absolute;top:53px;left:0;right:0;bottom:0;display:flex}
-
-    /* ── LEFT PANEL ── */
-    #left{
-      width:220px;flex-shrink:0;
-      background:rgba(2,4,8,0.9);border-right:1px solid #0f172a;
-      padding:16px 12px;display:flex;flex-direction:column;gap:0;overflow-y:auto;z-index:10;
-    }
-    .slabel{font-family:'Roboto Mono',monospace;font-size:9px;color:#334155;letter-spacing:2px;margin-bottom:10px;margin-top:4px}
-    .divider{height:1px;background:#0f172a;margin:12px 0}
-
-    .metric-btn{
-      padding:10px 12px;border:1px solid #0f172a;background:#06090e;
-      cursor:pointer;margin-bottom:4px;transition:all 0.15s;border-radius:2px;
-    }
-    .metric-btn:hover{background:#0f172a;border-color:#1f2d3d}
-    .metric-btn.active{background:#0a1929;border-color:#00e5ff;border-left:2px solid #00e5ff}
-    .btn-title{font-size:11px;font-weight:700;color:#cbd5e1;margin-bottom:2px}
-    .metric-btn.active .btn-title{color:#00e5ff}
-    .btn-value{font-family:'Roboto Mono',monospace;font-size:9px;color:#334155}
-    .metric-btn.active .btn-value{color:#334155}
-
-    .leader-item{
-      display:flex;justify-content:space-between;align-items:center;
-      padding:8px 10px;margin-bottom:4px;border-radius:2px;
-      background:#06090e;border:1px solid #0f172a;border-left:2px solid transparent;
-      cursor:pointer;transition:background 0.15s;
-    }
-    .leader-item:hover{background:#0f172a}
-    .leader-country{font-size:11px;font-weight:600;color:#cbd5e1}
-    .leader-iso{font-family:'Roboto Mono',monospace;font-size:9px;color:#475569;background:#0f172a;padding:1px 4px;border-radius:1px;margin-right:5px}
-    .leader-score{font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700}
-
-    .stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #0f172a;font-size:11px;color:#475569}
-    .stat-row b{font-family:'Roboto Mono',monospace;font-size:10px;color:#94a3b8;font-weight:700}
-
-    /* ── GLOBE WRAP ── */
-    #globe-wrap{flex:1;position:relative;overflow:hidden}
-    #globe-viz{width:100%;height:100%}
-
-    #metric-badge{
-      position:absolute;bottom:74px;left:50%;transform:translateX(-50%);
-      font-size:12px;font-weight:700;letter-spacing:2px;color:#fff;
-      pointer-events:none;padding:6px 16px;border:1px solid #1f2d3d;
-      background:rgba(2,4,8,0.85);font-family:'Roboto Mono',monospace;
-      backdrop-filter:blur(4px);border-radius:2px;white-space:nowrap;
-    }
-    #legend{
-      position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
-      display:flex;align-items:center;gap:12px;
-      background:rgba(2,4,8,0.8);padding:7px 16px;border:1px solid #1f2d3d;
-      pointer-events:none;border-radius:2px;backdrop-filter:blur(4px);
-    }
-    .leg-lbl{font-family:'Roboto Mono',monospace;font-size:9px;font-weight:700;color:#475569}
-    .leg-bar{width:160px;height:3px;background:linear-gradient(90deg,#10b981,#f59e0b,#ef4444)}
-    #hint{
-      position:absolute;bottom:30px;right:20px;
-      font-family:'Roboto Mono',monospace;font-size:9px;color:#1f2d3d;
-      pointer-events:none;
-    }
-    #loading-bar{
-      position:absolute;top:0;left:0;height:2px;background:#00e5ff;
-      transition:width 0.4s;width:0%;z-index:30;
-    }
-
-    /* ── RIGHT DETAIL PANEL ── */
-    #right{
-      position:absolute;right:0;top:0;bottom:0;width:300px;
-      pointer-events:none;z-index:15;
-      transform:translateX(100%);transition:transform 0.4s cubic-bezier(0.22,1,0.36,1);
-    }
-    #right.open{transform:translateX(0);pointer-events:auto}
-    #right-inner{
-      background:rgba(6,9,14,0.95);backdrop-filter:blur(12px);
-      border-left:1px solid #0f172a;
-      padding:20px;height:100%;display:flex;flex-direction:column;overflow-y:auto;
-    }
-    .det-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-    .det-iso-badge{background:#0f172a;color:#94a3b8;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:4px 8px;border-radius:2px}
-    .close-btn{background:#0f172a;border:1px solid #1f2d3d;color:#64748b;width:26px;height:26px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:2px;transition:all 0.2s}
-    .close-btn:hover{background:#1f2d3d;color:#fff}
-    .det-name{font-size:22px;font-weight:700;line-height:1.1;margin-bottom:4px;color:#f8fafc}
-    .det-cont{font-family:'Roboto Mono',monospace;font-size:9px;color:#334155;letter-spacing:2px;margin-bottom:20px}
-    .score-blk{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
-    .det-score{font-size:48px;font-weight:700;font-family:'Roboto Mono',monospace;line-height:1}
-    .score-unit{font-size:11px;color:#334155;font-family:'Roboto Mono',monospace;margin-bottom:4px}
-    .det-risk{font-size:10px;font-weight:700;letter-spacing:2px;font-family:'Roboto Mono',monospace;margin-bottom:20px;padding:4px 8px;display:inline-block;border-radius:2px}
-    .mlist-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #0f172a}
-    .mlist-lbl{font-size:11px;font-weight:600;color:#64748b}
-    .mlist-val{font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700}
-    .mlist-bar{height:2px;background:#0f172a;margin-top:3px;border-radius:1px;overflow:hidden}
-    .mlist-fill{height:100%;border-radius:1px;transition:width 0.6s}
-    .rank-box{margin-top:auto;padding-top:16px;border-top:1px solid #0f172a}
-    .rank-lbl{font-size:9px;font-weight:700;letter-spacing:2px;color:#334155;font-family:'Roboto Mono',monospace;margin-bottom:4px}
-    .rank-num{font-size:28px;font-weight:700;color:#00e5ff;font-family:'Roboto Mono',monospace}
-    .rank-of{font-size:10px;color:#334155;font-family:'Roboto Mono',monospace}
-
-    /* ── TOOLTIP ── */
-    #tooltip{position:fixed;display:none;z-index:50;pointer-events:none}
-    .tip-inner{background:#06090e;border:1px solid #1f2d3d;padding:8px 12px;display:flex;align-items:center;gap:10px;border-radius:2px;box-shadow:0 4px 20px rgba(0,0,0,0.6)}
-    .tip-iso{font-family:'Roboto Mono',monospace;color:#64748b;font-size:9px;background:#0f172a;padding:2px 5px;border-radius:2px}
-    .tip-name{font-size:12px;font-weight:700;color:#f8fafc;margin-bottom:2px}
-    .tip-score{font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700}
-  </style>
 </head>
+
 <body>
+  <div id="earth-glow"></div>
 
   <header>
-    <div class="logo" onclick="window.location.reload()">
+    <div class="logo" onclick="window.location.reload()" style="cursor:pointer">
       <div class="logo-mark">GS</div>
       <div>
         <div class="logo-name">Geo<span>Sense</span></div>
@@ -159,62 +23,45 @@
     <div class="header-right">
       <div class="live-pill">
         <div class="live-dot"></div>
-        <span id="country-count">SYNCING DATA...</span>
+        <span id="country-count">LIVE · SYNCING DATA</span>
       </div>
     </div>
   </header>
 
   <div id="main">
     <aside id="left">
-      <div class="slabel">CLIMATE METRICS</div>
+      <div class="slabel">ANALYTICS ENGINE</div>
       <div id="metric-btns"></div>
+
       <div class="divider"></div>
-      <div class="slabel">CRITICAL ZONES</div>
+
+      <div class="slabel">CRITICAL IMPACT ZONES</div>
       <div id="top-list"></div>
-      <div class="divider"></div>
-      <div class="slabel">GLOBAL STATS</div>
-      <div id="global-stats"></div>
+
+      <div class="divider" style="margin-top:auto;"></div>
+      <div class="dist-wrap" id="dist-stats"></div>
     </aside>
 
-    <section id="globe-wrap">
-      <div id="loading-bar"></div>
+    <main id="globe-wrap">
       <div id="globe-viz"></div>
-      <div id="metric-badge">TRACKING: PM2.5 PARTICLES</div>
+      <div id="metric-badge">TRACKING: PM2.5</div>
       <div id="legend">
         <span class="leg-lbl">SAFE</span>
         <div class="leg-bar"></div>
         <span class="leg-lbl">HAZARDOUS</span>
       </div>
-      <div id="hint">↻ Rotate · Scroll zoom · Click region</div>
-    </section>
+      <div id="hint">↻ Rotate globe · Scroll to zoom · Click for detail</div>
+    </main>
+
+    <aside id="right">
+      <div id="right-inner"><div id="detail-content"></div></div>
+    </aside>
   </div>
 
-  <aside id="right">
-    <div id="right-inner">
-      <div class="det-hdr">
-        <div id="d-iso" class="det-iso-badge">---</div>
-        <button class="close-btn" id="close-btn">✕</button>
-      </div>
-      <div id="d-name" class="det-name"></div>
-      <div id="d-cont" class="det-cont"></div>
-      <div class="score-blk">
-        <div id="d-score" class="det-score">--</div>
-        <div id="d-unit" class="score-unit">μg/m³</div>
-      </div>
-      <div id="d-risk" class="det-risk"></div>
-      <div class="slabel" style="margin-bottom:8px">ALL METRICS</div>
-      <div id="d-metrics"></div>
-      <div class="rank-box">
-        <div class="rank-lbl">GLOBAL RANK</div>
-        <div id="d-rank" class="rank-num">--</div>
-        <div id="d-rankof" class="rank-of"></div>
-      </div>
-    </div>
-  </aside>
-
+  <!-- Tooltip -->
   <div id="tooltip">
     <div class="tip-inner">
-      <div id="t-iso" class="tip-iso"></div>
+      <span id="t-flag" class="tip-flag"></span>
       <div>
         <div id="t-name" class="tip-name"></div>
         <div id="t-score" class="tip-score"></div>
@@ -223,122 +70,117 @@
   </div>
 
   <script>
-  /* ══════════════════════════════════════════════
+  /* ══════════════════════════════════════
      STATE
-  ══════════════════════════════════════════════ */
-  let DATA = [];
-  let curMetric = 'pm2_5';
+  ══════════════════════════════════════ */
+  let DATA       = [];
+  let curMetric  = 'pm2_5';
   let selCountry = null;
-  let totalSynced = 0;
 
   const METRICS = [
-    { key:'pm2_5',  label:'PM2.5 Particles',    icon:'😷', unit:'μg/m³', max:80,  thresholds:[0,10,25,50]  },
-    { key:'pm10',   label:'PM10 Pollutants',     icon:'🌫️', unit:'μg/m³', max:150, thresholds:[0,20,50,100] },
-    { key:'co',     label:'Carbon Monoxide',     icon:'🚗', unit:'μg/m³', max:600, thresholds:[0,150,300,500]},
-    { key:'no2',    label:'Nitrogen Dioxide',    icon:'🏭', unit:'μg/m³', max:150, thresholds:[0,10,25,100] },
-    { key:'temp',   label:'Temperature',         icon:'🌡️', unit:'°C',    max:50,  thresholds:[-20,0,20,35]  },
+    { key: 'pm2_5', label: 'PM2.5 Particles',  icon: '😷', unit: 'μg/m³', max: 80  },
+    { key: 'pm10',  label: 'PM10 Pollutants',   icon: '🌫️', unit: 'μg/m³', max: 150 },
+    { key: 'co',    label: 'Carbon Monoxide',   icon: '🚗', unit: 'μg/m³', max: 600 },
+    { key: 'no2',   label: 'Nitrogen Dioxide',  icon: '🏭', unit: 'μg/m³', max: 150 },
+    { key: 'temp',  label: 'Temperature',       icon: '🌡️', unit: '°C',    max: 50  },
   ];
 
-  /* ══════════════════════════════════════════════
+  /* ══════════════════════════════════════
      COLOUR HELPERS
-  ══════════════════════════════════════════════ */
+  ══════════════════════════════════════ */
   function getColor(val, key) {
-    const m = METRICS.find(x => x.key === key);
-    if (!m) return '#64748b';
     if (key === 'temp') {
       const t = Math.max(0, Math.min(1, (val + 30) / 80));
       const stops = [[139,92,246],[59,130,246],[16,185,129],[245,158,11],[239,68,68]];
-      const i = Math.min(Math.floor(t * (stops.length-1)), stops.length-2);
-      const f = t * (stops.length-1) - i;
-      const r = Math.round(stops[i][0]*(1-f)+stops[i+1][0]*f);
-      const g = Math.round(stops[i][1]*(1-f)+stops[i+1][1]*f);
-      const b = Math.round(stops[i][2]*(1-f)+stops[i+1][2]*f);
+      const i = Math.min(Math.floor(t * (stops.length - 1)), stops.length - 2);
+      const f = t * (stops.length - 1) - i;
+      const r = Math.round(stops[i][0] * (1-f) + stops[i+1][0] * f);
+      const g = Math.round(stops[i][1] * (1-f) + stops[i+1][1] * f);
+      const b = Math.round(stops[i][2] * (1-f) + stops[i+1][2] * f);
       return `rgb(${r},${g},${b})`;
     }
-    const t = m.thresholds;
-    if (val < t[1]) return '#10b981';
-    if (val < t[2]) return '#f59e0b';
-    if (val < t[3]) return '#ef4444';
-    return '#8b5cf6';
+    if (val >= 80)  return '#8b5cf6';
+    if (val >= 50)  return '#ef4444';
+    if (val >= 20)  return '#f59e0b';
+    if (val >= 5)   return '#10b981';
+    return '#64748b';
   }
 
-  function getRiskLabel(val, key) {
-    const m = METRICS.find(x => x.key === key);
-    if (!m || key === 'temp') {
-      if (val > 35) return 'EXTREME HEAT';
-      if (val > 20) return 'WARM';
-      if (val > 0)  return 'MODERATE';
+  function getRisk(val, key) {
+    if (key === 'temp') {
+      if (val > 40) return 'EXTREME HEAT';
+      if (val > 25) return 'HOT';
+      if (val > 10) return 'MODERATE';
+      if (val > 0)  return 'COOL';
       return 'COLD';
     }
-    const t = m.thresholds;
-    if (val < t[1]) return 'GOOD';
-    if (val < t[2]) return 'MODERATE';
-    if (val < t[3]) return 'UNHEALTHY';
-    return 'HAZARDOUS';
+    if (val >= 80) return 'HAZARDOUS';
+    if (val >= 50) return 'UNHEALTHY';
+    if (val >= 20) return 'MODERATE';
+    if (val >= 5)  return 'GOOD';
+    return 'MINIMAL';
   }
 
-  /* ══════════════════════════════════════════════
-     GLOBE SETUP
-  ══════════════════════════════════════════════ */
+  /* ══════════════════════════════════════
+     GLOBE
+  ══════════════════════════════════════ */
   const world = Globe()(document.getElementById('globe-viz'))
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
     .backgroundColor('#020408')
     .showAtmosphere(true)
-    .atmosphereColor('#0ea5e9')
-    .atmosphereAltitude(0.12)
+    .atmosphereColor('lightskyblue')
+    .atmosphereAltitude(0.15)
     .polygonCapColor(feat => {
       const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
-      if (!c || !c.synced) return 'rgba(15,23,42,0.5)';
+      if (!c || !c.synced) return 'rgba(2,4,8,0.3)';
       return getColor(c.scores[curMetric], curMetric) + 'b0';
     })
-    .polygonSideColor(() => 'rgba(15,23,42,0.3)')
+    .polygonSideColor(() => 'rgba(15,23,42,0.4)')
     .polygonStrokeColor(() => 'rgba(255,255,255,0.08)')
-    .polygonAltitude(feat => {
+    .polygonAltitude(0.012)
+    .onPolygonHover(feat => {
+      const tt = document.getElementById('tooltip');
+      if (!feat) { tt.style.display = 'none'; return; }
       const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
-      return c && c.synced ? 0.01 : 0.003;
-    })
-    .onPolygonHover((feat, prev) => {
-      const t = document.getElementById('tooltip');
-      if (!feat) { t.style.display = 'none'; return; }
-      const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
-      if (!c) { t.style.display = 'none'; return; }
-      document.getElementById('t-iso').textContent  = c.iso;
-      document.getElementById('t-name').textContent = c.name;
-      const ts = document.getElementById('t-score');
-      const col = getColor(c.scores[curMetric], curMetric);
+      if (!c) { tt.style.display = 'none'; return; }
       const m = METRICS.find(x => x.key === curMetric);
-      ts.textContent = c.synced ? `${c.scores[curMetric]} ${m.unit} · ${getRiskLabel(c.scores[curMetric], curMetric)}` : 'Syncing...';
+      const col = getColor(c.scores[curMetric], curMetric);
+      document.getElementById('t-flag').textContent  = c.iso;
+      document.getElementById('t-name').textContent  = c.name;
+      const ts = document.getElementById('t-score');
+      ts.textContent = c.synced
+        ? `${c.scores[curMetric]} ${m.unit} · ${getRisk(c.scores[curMetric], curMetric)}`
+        : 'Syncing...';
       ts.style.color = col;
-      t.style.display = 'block';
+      tt.style.display = 'block';
     })
     .onPolygonClick(feat => {
       const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
       if (c) openDetail(c);
     });
 
-  // Move tooltip with mouse
   document.addEventListener('mousemove', e => {
-    const t = document.getElementById('tooltip');
-    if (t.style.display === 'block') {
-      t.style.left = (e.clientX + 14) + 'px';
-      t.style.top  = (e.clientY - 40) + 'px';
+    const tt = document.getElementById('tooltip');
+    if (tt.style.display === 'block') {
+      tt.style.left = (e.clientX + 14) + 'px';
+      tt.style.top  = (e.clientY - 36) + 'px';
     }
   });
 
-  world.controls().autoRotate = true;
-  world.controls().autoRotateSpeed = 0.4;
-  world.controls().enableDamping = true;
-
-  // Clouds layer (THREE is loaded from the script tag)
+  // Cloud layer
   new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-clouds.png', tex => {
     const clouds = new THREE.Mesh(
       new THREE.SphereGeometry(world.getGlobeRadius() * 1.004, 75, 75),
-      new THREE.MeshPhongMaterial({ map: tex, transparent: true, opacity: 0.7, depthWrite: false })
+      new THREE.MeshPhongMaterial({ map: tex, transparent: true, opacity: 0.75, depthWrite: false })
     );
     world.scene().add(clouds);
     (function spin() { clouds.rotation.y += 0.0003; requestAnimationFrame(spin); })();
   });
+
+  world.controls().autoRotate     = true;
+  world.controls().autoRotateSpeed = 0.5;
+  world.controls().enableDamping  = true;
 
   window.addEventListener('resize', () => {
     const w = document.getElementById('globe-wrap');
@@ -347,50 +189,41 @@
   setTimeout(() => {
     const w = document.getElementById('globe-wrap');
     world.width(w.offsetWidth).height(w.offsetHeight);
-  }, 200);
+  }, 300);
 
-  /* ══════════════════════════════════════════════
-     DATA LOADING
-  ══════════════════════════════════════════════ */
-  function setLoading(pct) {
-    document.getElementById('loading-bar').style.width = pct + '%';
-    if (pct >= 100) setTimeout(() => document.getElementById('loading-bar').style.opacity = '0', 600);
-  }
-
+  /* ══════════════════════════════════════
+     DATA LOADING — batched, choropleth only
+  ══════════════════════════════════════ */
   fetch('https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson')
     .then(r => r.json())
     .then(geojson => {
       geojson.features.forEach(f => {
-        const lat = f.properties.LABEL_Y;
-        const lng = f.properties.LABEL_X;
-        if (lat != null && lng != null) {
+        const lat = parseFloat(f.properties.LABEL_Y);
+        const lng = parseFloat(f.properties.LABEL_X);
+        if (!isNaN(lat) && !isNaN(lng)) {
           DATA.push({
             iso:    f.properties.ISO_A3,
             name:   f.properties.ADMIN || f.properties.NAME,
             cont:   f.properties.CONTINENT || '',
-            lat:    parseFloat(lat),
-            lng:    parseFloat(lng),
+            lat, lng,
             synced: false,
-            scores: { pm2_5:0, pm10:0, co:0, no2:0, temp:0 }
+            scores: { pm2_5: 0, pm10: 0, co: 0, no2: 0, temp: 0 }
           });
         }
       });
 
       world.polygonsData(geojson.features);
-      buildLeftPanel();
-      setLoading(10);
-      batchFetch();
+      buildUI();
+      batchSync();
     });
 
-  function batchFetch() {
+  function batchSync() {
     const CHUNK = 50;
-    const total = DATA.length;
     let done = 0;
-
-    for (let i = 0; i < total; i += CHUNK) {
+    for (let i = 0; i < DATA.length; i += CHUNK) {
       const chunk = DATA.slice(i, i + CHUNK);
-      const lats = chunk.map(c => c.lat.toFixed(2)).join(',');
-      const lngs = chunk.map(c => c.lng.toFixed(2)).join(',');
+      const lats  = chunk.map(c => c.lat.toFixed(2)).join(',');
+      const lngs  = chunk.map(c => c.lng.toFixed(2)).join(',');
 
       Promise.all([
         fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lngs}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide`).then(r => r.json()),
@@ -400,50 +233,53 @@
         const tmpArr = Array.isArray(tmp) ? tmp : [tmp];
         chunk.forEach((c, idx) => {
           if (aqArr[idx]?.current) {
-            c.scores.pm10  = Math.round(aqArr[idx].current.pm10              || 0);
-            c.scores.pm2_5 = Math.round(aqArr[idx].current.pm2_5             || 0);
-            c.scores.co    = Math.round(aqArr[idx].current.carbon_monoxide   || 0);
-            c.scores.no2   = Math.round(aqArr[idx].current.nitrogen_dioxide  || 0);
+            c.scores.pm2_5 = Math.round(aqArr[idx].current.pm2_5            || 0);
+            c.scores.pm10  = Math.round(aqArr[idx].current.pm10             || 0);
+            c.scores.co    = Math.round(aqArr[idx].current.carbon_monoxide  || 0);
+            c.scores.no2   = Math.round(aqArr[idx].current.nitrogen_dioxide || 0);
           }
           if (tmpArr[idx]?.current) {
             c.scores.temp = Math.round(tmpArr[idx].current.temperature_2m || 0);
           }
           c.synced = true;
         });
-
         done += chunk.length;
-        totalSynced = DATA.filter(x => x.synced).length;
-        setLoading(10 + (done / total) * 90);
-        buildLeftPanel();
-        // Force globe color refresh
+        // Refresh globe choropleth colors
         world.polygonCapColor(world.polygonCapColor());
-        world.polygonAltitude(world.polygonAltitude());
-
+        buildUI();
+        const synced = DATA.filter(x => x.synced).length;
         document.getElementById('country-count').textContent =
-          `LIVE · ${totalSynced} / ${total} REGIONS SYNCED`;
-
-      }).catch(err => console.error('Batch fetch failed', err));
+          `LIVE · ${synced} / ${DATA.length} REGIONS`;
+        // Refresh open detail panel if visible
+        if (selCountry) {
+          const fresh = DATA.find(x => x.iso === selCountry.iso);
+          if (fresh) openDetail(fresh);
+        }
+      }).catch(err => console.error('Batch error', err));
     }
   }
 
-  /* ══════════════════════════════════════════════
+  /* ══════════════════════════════════════
      UI BUILDERS
-  ══════════════════════════════════════════════ */
-  function buildLeftPanel() {
+  ══════════════════════════════════════ */
+  function buildUI() {
     buildMetricBtns();
     buildTopList();
-    buildStats();
+    buildDistStats();
   }
 
   function buildMetricBtns() {
     const el = document.getElementById('metric-btns');
+    if (!el) return;
     el.innerHTML = '';
     METRICS.forEach(m => {
       const synced = DATA.filter(x => x.synced);
-      const avg = synced.length ? (synced.reduce((s,c) => s + (c.scores[m.key]||0), 0) / synced.length).toFixed(1) : '--';
+      const avg = synced.length
+        ? (synced.reduce((s, c) => s + (c.scores[m.key] || 0), 0) / synced.length).toFixed(1)
+        : '--';
       const btn = document.createElement('div');
       btn.className = 'metric-btn' + (curMetric === m.key ? ' active' : '');
-      btn.innerHTML = `<div class="btn-title">${m.icon} ${m.label}</div><div class="btn-value">AVG: ${avg} ${m.unit}</div>`;
+      btn.innerHTML = `<div class="btn-title">${m.icon} ${m.label}</div><div class="btn-value">AVG ${avg} ${m.unit}</div>`;
       btn.onclick = () => selectMetric(m.key);
       el.appendChild(btn);
     });
@@ -451,115 +287,122 @@
 
   function buildTopList() {
     const el = document.getElementById('top-list');
+    if (!el) return;
     el.innerHTML = '';
     const synced = DATA.filter(x => x.synced);
-    if (!synced.length) { el.innerHTML = '<div style="font-family:\'Roboto Mono\',monospace;font-size:9px;color:#334155;padding:8px 0">Syncing data...</div>'; return; }
+    if (!synced.length) {
+      el.innerHTML = '<div style="font-family:\'Roboto Mono\',monospace;font-size:9px;color:#334155;padding:8px 0">Syncing regions...</div>';
+      return;
+    }
     [...synced]
-      .sort((a,b) => (b.scores[curMetric]||0) - (a.scores[curMetric]||0))
-      .slice(0, 7)
+      .sort((a, b) => (b.scores[curMetric] || 0) - (a.scores[curMetric] || 0))
+      .slice(0, 6)
       .forEach(c => {
         const val = c.scores[curMetric];
         const col = getColor(val, curMetric);
         const m   = METRICS.find(x => x.key === curMetric);
+        const pct = Math.min(100, (val / m.max) * 100).toFixed(0);
         const div = document.createElement('div');
         div.className = 'leader-item';
         div.style.borderLeftColor = col;
-        div.innerHTML = `<div class="leader-country"><span class="leader-iso">${c.iso}</span>${c.name}</div><div class="leader-score" style="color:${col}">${val}</div>`;
+        div.innerHTML = `
+          <div class="leader-bg-bar" style="width:${pct}%;background:${col}"></div>
+          <div class="leader-content">
+            <div class="leader-country"><span class="leader-flag">${c.iso}</span>${c.name}</div>
+            <div class="leader-score" style="color:${col}">${val}</div>
+          </div>`;
         div.onclick = () => openDetail(c);
         el.appendChild(div);
       });
   }
 
-  function buildStats() {
-    const el = document.getElementById('global-stats');
-    el.innerHTML = '';
+  function buildDistStats() {
+    const el = document.getElementById('dist-stats');
+    if (!el) return;
     const synced = DATA.filter(x => x.synced);
     if (!synced.length) return;
-    const m = METRICS.find(x => x.key === curMetric);
+    const m    = METRICS.find(x => x.key === curMetric);
     const vals = synced.map(x => x.scores[curMetric]);
-    const avg  = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const avg  = (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
     const max  = Math.max(...vals);
-    const maxC = synced.reduce((a,b) => (b.scores[curMetric]>a.scores[curMetric]?b:a));
-    [
-      ['AVG', `${avg} ${m.unit}`],
-      ['MAX', `${max} ${m.unit}`],
-      ['WORST', maxC.iso],
-      ['REGIONS', `${synced.length} / ${DATA.length}`],
-    ].forEach(([lbl, val]) => {
-      el.innerHTML += `<div class="stat-row"><span>${lbl}</span><b>${val}</b></div>`;
-    });
+    const maxC = synced.reduce((a, b) => b.scores[curMetric] > a.scores[curMetric] ? b : a);
+    el.innerHTML = `
+      <div class="slabel">GLOBAL AGGREGATE</div>
+      <div class="dist-row"><span>Average</span><b style="font-family:'Roboto Mono',monospace;font-size:10px">${avg} ${m.unit}</b></div>
+      <div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${Math.min(100,(avg/m.max)*100).toFixed(0)}%;background:${getColor(parseFloat(avg), curMetric)}"></div></div>
+      <div class="dist-row"><span>Peak</span><b style="font-family:'Roboto Mono',monospace;font-size:10px;color:${getColor(max, curMetric)}">${max} ${m.unit}</b></div>
+      <div class="dist-row" style="font-size:10px;color:#475569">Worst Region</div>
+      <div class="dist-row"><b style="font-family:'Roboto Mono',monospace;font-size:10px;color:#94a3b8">${maxC.iso} — ${maxC.name}</b></div>
+    `;
   }
 
   function selectMetric(key) {
     curMetric = key;
-    buildLeftPanel();
-    const m = METRICS.find(x => x.key === key);
+    const m   = METRICS.find(x => x.key === key);
     document.getElementById('metric-badge').textContent = `TRACKING: ${m.label.toUpperCase()}`;
-    // Refresh globe colours
+    buildUI();
     world.polygonCapColor(world.polygonCapColor());
-    world.polygonAltitude(world.polygonAltitude());
     if (selCountry) openDetail(selCountry);
   }
 
-  /* ══════════════════════════════════════════════
+  /* ══════════════════════════════════════
      DETAIL PANEL
-  ══════════════════════════════════════════════ */
+  ══════════════════════════════════════ */
   function openDetail(c) {
     selCountry = c;
     world.controls().autoRotate = false;
-    world.pointOfView({ lat: c.lat, lng: c.lng, altitude: 1.6 }, 800);
-
-    document.getElementById('d-iso').textContent  = c.iso;
-    document.getElementById('d-name').textContent = c.name;
-    document.getElementById('d-cont').textContent = (c.cont || 'Global').toUpperCase();
+    world.pointOfView({ lat: c.lat, lng: c.lng, altitude: 1.8 }, 900);
 
     const m   = METRICS.find(x => x.key === curMetric);
     const val = c.scores[curMetric];
     const col = getColor(val, curMetric);
-    const lbl = getRiskLabel(val, curMetric);
+    const lbl = getRisk(val, curMetric);
 
-    const scoreEl = document.getElementById('d-score');
-    scoreEl.textContent  = c.synced ? val : '--';
-    scoreEl.style.color  = col;
-    document.getElementById('d-unit').textContent = m.unit;
+    const sorted = DATA.filter(x => x.synced).sort((a, b) => b.scores[curMetric] - a.scores[curMetric]);
+    const rank   = sorted.findIndex(x => x.iso === c.iso) + 1;
 
-    const riskEl = document.getElementById('d-risk');
-    riskEl.textContent       = lbl;
-    riskEl.style.color       = col;
-    riskEl.style.background  = col + '22';
-    riskEl.style.border      = `1px solid ${col}44`;
-
-    // All metrics bars
-    const dm = document.getElementById('d-metrics');
-    dm.innerHTML = '';
-    METRICS.forEach(mx => {
+    // Build all metric rows
+    const metricRows = METRICS.map(mx => {
       const mv  = c.scores[mx.key];
       const mc  = getColor(mv, mx.key);
       const pct = Math.min(100, (mv / mx.max) * 100).toFixed(0);
-      dm.innerHTML += `
+      return `
         <div class="mlist-row">
-          <div><div class="mlist-lbl">${mx.icon} ${mx.label}</div>
-          <div class="mlist-bar"><div class="mlist-fill" style="width:${pct}%;background:${mc}"></div></div></div>
+          <div class="mlist-lbl">${mx.icon} ${mx.label}</div>
           <div class="mlist-val" style="color:${mc}">${c.synced ? mv : '--'} <span style="font-size:9px;opacity:0.5">${mx.unit}</span></div>
         </div>`;
-    });
+    }).join('');
 
-    // Rank
-    const sorted = [...DATA].filter(x => x.synced).sort((a,b) => (b.scores[curMetric]||0)-(a.scores[curMetric]||0));
-    const rank   = sorted.findIndex(x => x.iso === c.iso) + 1;
-    document.getElementById('d-rank').textContent   = rank ? `#${rank}` : '--';
-    document.getElementById('d-rankof').textContent = `of ${sorted.length} synced regions`;
+    document.getElementById('detail-content').innerHTML = `
+      <div class="det-hdr">
+        <div class="det-flag" style="background:${col};color:#020408">${c.iso}</div>
+        <button class="close-btn" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="det-name">${c.name}</div>
+      <div class="det-iso">${c.cont.toUpperCase()} · REGION DATA</div>
+      <div class="score-blk">
+        <div class="det-score" style="color:${col}">${c.synced ? val : '--'}</div>
+        <div class="score-den">${m.unit}</div>
+      </div>
+      <div class="det-risk" style="color:${col}">${lbl}</div>
+      <div class="slabel" style="margin-top:4px;margin-bottom:8px">ALL METRICS</div>
+      ${metricRows}
+      <div class="rank-box">
+        <div>
+          <div class="rank-lbl">GLOBAL RANK</div>
+          <div class="rank-num" style="color:${col}">${rank ? '#' + rank : '--'}</div>
+          <div class="rank-of">of ${sorted.length} synced regions</div>
+        </div>
+      </div>`;
 
-    document.getElementById('right').classList.add('open');
+    document.getElementById('right').classList.add('active');
   }
 
   function closeDetail() {
-    document.getElementById('right').classList.remove('open');
+    document.getElementById('right').classList.remove('active');
     selCountry = null;
     world.controls().autoRotate = true;
   }
-
-  document.getElementById('close-btn').addEventListener('click', closeDetail);
   </script>
 </body>
 </html>

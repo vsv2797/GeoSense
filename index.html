@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GeoSense | Global Climate Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="css/climate.css">
   <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
   <script src="https://unpkg.com/globe.gl@2.26.0/dist/globe.gl.min.js"></script>
@@ -11,6 +13,14 @@
 
 <body>
   <div id="earth-glow"></div>
+
+  <div class="search-container">
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Search countries, regions, cities..." autocomplete="off">
+    </div>
+    <ul id="search-results" style="display: none;"></ul>
+  </div>
 
   <header>
     <div class="logo">
@@ -68,7 +78,7 @@
     // force globe.gl to repaint the choropleth after data arrives.
     function capColor(feat) {
         const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
-        if (!c || !c.synced) return 'rgba(2, 4, 8, 0.2)';
+        if (!c || !c.synced) return 'rgba(9, 14, 21, 0.4)';
         const val = c.scores[curMetric] || 0;
         if (curMetric === 'temp') {
             let t = (val + 30) / 80;
@@ -95,14 +105,14 @@
     function refreshColors() { world.polygonCapColor(feat => capColor(feat)); }
 
     const world = Globe()(document.getElementById('globe-viz'))
-      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
       .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-      .backgroundColor('#020408')
+      .backgroundColor('#090e15')
       .showAtmosphere(true)
-      .atmosphereColor('lightskyblue')
+      .atmosphereColor('#00e5ff')
       .atmosphereAltitude(0.15)
       .polygonCapColor(feat => capColor(feat))
-      .polygonStrokeColor(() => 'rgba(255, 255, 255, 0.1)')
+      .polygonStrokeColor(() => 'rgba(0, 229, 255, 0.15)')
       .polygonAltitude(0.012)
       .polygonLabel(feat => {
         const c = DATA.find(x => x.iso === feat.properties.ISO_A3);
@@ -335,6 +345,18 @@
             else { risk = 'SAFE'; riskColor = '#10b981'; }
         }
 
+        // Set dynamic panel variables
+        const rgbMap = {
+            '#10b981': '16, 185, 129',
+            '#f59e0b': '245, 158, 11',
+            '#ef4444': '239, 68, 68',
+            '#8b5cf6': '139, 92, 246',
+            '#3b82f6': '59, 130, 246'
+        };
+        const rgb = rgbMap[riskColor] || '0, 229, 255';
+        document.getElementById('right').style.setProperty('--country-accent', riskColor);
+        document.getElementById('right').style.setProperty('--country-accent-rgb', rgb);
+
         const detailsHtml = `
             <div class="det-hdr">
                 <span class="det-flag">${c.iso}</span>
@@ -349,12 +371,22 @@
             </div>
             <div class="det-risk" style="color: ${riskColor}">${risk}</div>
 
-            <div class="info-box">
-                <span>ℹ️</span>
-                <div>Real-time climate telemetry synced from Open-Meteo API.</div>
+            <div class="slabel">24-HOUR TREND</div>
+            <div id="hourly-timeline" class="hourly-timeline">
+                <div class="detail-loading">Loading trend telemetry...</div>
             </div>
 
-            <div class="slabel">ALL METRICS</div>
+            <div class="slabel">REGIONAL EXTREMES</div>
+            <div id="regional-extremes" class="regional-extremes">
+                <div class="detail-loading">Loading regional extremities...</div>
+            </div>
+
+            <div class="info-box">
+                <span>ℹ️</span>
+                <div>Real-time climate telemetry synced from Open-Meteo & Nominatim APIs.</div>
+            </div>
+
+            <div class="slabel">ALL CURRENT METRICS</div>
             <div class="mlist-row">
                 <div class="mlist-lbl">🌫️ PM10</div>
                 <div class="mlist-val">${c.scores.pm10} µg/m³</div>
@@ -390,12 +422,296 @@
         world.controls().autoRotate = false;
         
         world.pointOfView({ lat: c.lat, lng: c.lng, altitude: 1.2 }, 1000);
+
+        // 1. Fetch Hourly Timeline
+        Promise.all([
+            fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${c.lat}&longitude=${c.lng}&hourly=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide&forecast_days=1`),
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lng}&hourly=temperature_2m&forecast_days=1`)
+        ]).then(resps => Promise.all(resps.map(r => r.json())))
+          .then(([aqHourly, tmpHourly]) => {
+              const timelineEl = document.getElementById('hourly-timeline');
+              if (!timelineEl) return;
+              
+              let hourlyTimes = tmpHourly.hourly.time;
+              let values = [];
+              let formatVal = (v) => v;
+              
+              if (curMetric === 'temp') {
+                  values = tmpHourly.hourly.temperature_2m;
+                  formatVal = (v) => `${Math.round(v)}°C`;
+              } else if (curMetric === 'pm10') {
+                  values = aqHourly.hourly.pm10;
+                  formatVal = (v) => `${Math.round(v)} µg`;
+              } else if (curMetric === 'pm2_5') {
+                  values = aqHourly.hourly.pm2_5;
+                  formatVal = (v) => `${Math.round(v)} µg`;
+              } else if (curMetric === 'co') {
+                  values = aqHourly.hourly.carbon_monoxide;
+                  formatVal = (v) => `${Math.round(v)} µg`;
+              } else if (curMetric === 'no2') {
+                  values = aqHourly.hourly.nitrogen_dioxide;
+                  formatVal = (v) => `${Math.round(v)} µg`;
+              }
+
+              timelineEl.innerHTML = '';
+              hourlyTimes.forEach((timeStr, idx) => {
+                  const hour = new Date(timeStr).getHours();
+                  const hourLabel = hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour-12} PM` : `${hour} AM`;
+                  
+                  const card = document.createElement('div');
+                  card.className = 'hourly-card';
+                  card.innerHTML = `
+                      <div class="hourly-time">${hourLabel}</div>
+                      <div class="hourly-val">${formatVal(values[idx])}</div>
+                  `;
+                  timelineEl.appendChild(card);
+              });
+          }).catch(err => {
+              console.error("Hourly fetch error:", err);
+              const el = document.getElementById('hourly-timeline');
+              if (el) el.innerHTML = '<div class="detail-error">Failed to load trend data.</div>';
+          });
+
+        // 2. Fetch Regional Extremes (Hottest/Coolest or Highest/Lowest regions)
+        const extremesEl = document.getElementById('regional-extremes');
+        if (extremesEl) {
+            const citiesMap = {
+                'USA': [
+                    { name: 'New York', lat: 40.7128, lng: -74.0060 },
+                    { name: 'Los Angeles', lat: 34.0522, lng: -118.2437 },
+                    { name: 'Chicago', lat: 41.8781, lng: -87.6298 },
+                    { name: 'Houston', lat: 29.7604, lng: -95.3698 },
+                    { name: 'Miami', lat: 25.7617, lng: -80.1918 }
+                ],
+                'GBR': [
+                    { name: 'London', lat: 51.5074, lng: -0.1278 },
+                    { name: 'Birmingham', lat: 52.4862, lng: -1.8904 },
+                    { name: 'Manchester', lat: 53.4808, lng: -2.2426 },
+                    { name: 'Glasgow', lat: 55.8642, lng: -4.2518 },
+                    { name: 'Belfast', lat: 54.5973, lng: -5.9301 }
+                ],
+                'FRA': [
+                    { name: 'Paris', lat: 48.8566, lng: 2.3522 },
+                    { name: 'Marseille', lat: 43.2965, lng: 5.3698 },
+                    { name: 'Lyon', lat: 45.7640, lng: 4.8357 },
+                    { name: 'Toulouse', lat: 43.6047, lng: 1.4442 },
+                    { name: 'Nice', lat: 43.7102, lng: 7.2620 }
+                ],
+                'DEU': [
+                    { name: 'Berlin', lat: 52.5200, lng: 13.4050 },
+                    { name: 'Munich', lat: 48.1351, lng: 11.5820 },
+                    { name: 'Hamburg', lat: 53.5511, lng: 9.9937 },
+                    { name: 'Frankfurt', lat: 50.1109, lng: 8.6821 },
+                    { name: 'Cologne', lat: 50.9375, lng: 6.9603 }
+                ],
+                'IND': [
+                    { name: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+                    { name: 'Delhi', lat: 28.7041, lng: 77.1025 },
+                    { name: 'Bangalore', lat: 12.9716, lng: 77.5946 },
+                    { name: 'Kolkata', lat: 22.5726, lng: 88.3639 },
+                    { name: 'Chennai', lat: 13.0827, lng: 80.2707 }
+                ],
+                'CHN': [
+                    { name: 'Beijing', lat: 39.9042, lng: 116.4074 },
+                    { name: 'Shanghai', lat: 31.2304, lng: 121.4737 },
+                    { name: 'Guangzhou', lat: 23.1291, lng: 113.2644 },
+                    { name: 'Chengdu', lat: 30.5728, lng: 104.0668 },
+                    { name: 'Shenzhen', lat: 22.5431, lng: 114.0579 }
+                ],
+                'JPN': [
+                    { name: 'Tokyo', lat: 35.6762, lng: 139.6503 },
+                    { name: 'Osaka', lat: 34.6937, lng: 135.5023 },
+                    { name: 'Kyoto', lat: 35.0116, lng: 135.7681 },
+                    { name: 'Sapporo', lat: 43.0618, lng: 141.3545 },
+                    { name: 'Fukuoka', lat: 33.5902, lng: 130.4017 }
+                ],
+                'BRA': [
+                    { name: 'São Paulo', lat: -23.5505, lng: -46.6333 },
+                    { name: 'Rio de Janeiro', lat: -22.9068, lng: -43.1729 },
+                    { name: 'Brasília', lat: -15.7975, lng: -47.8919 },
+                    { name: 'Salvador', lat: -12.9777, lng: -38.5016 },
+                    { name: 'Manaus', lat: -3.1190, lng: -60.0217 }
+                ],
+                'CAN': [
+                    { name: 'Toronto', lat: 43.6532, lng: -79.3832 },
+                    { name: 'Vancouver', lat: 49.2827, lng: -123.1207 },
+                    { name: 'Montreal', lat: 45.5017, lng: -73.5673 },
+                    { name: 'Calgary', lat: 51.0447, lng: -114.0719 },
+                    { name: 'Ottawa', lat: 45.4215, lng: -75.6972 }
+                ],
+                'AUS': [
+                    { name: 'Sydney', lat: -33.8688, lng: 151.2093 },
+                    { name: 'Melbourne', lat: -37.8136, lng: 144.9631 },
+                    { name: 'Brisbane', lat: -27.4705, lng: 153.0260 },
+                    { name: 'Perth', lat: -31.9505, lng: 115.8605 },
+                    { name: 'Adelaide', lat: -34.9285, lng: 138.6007 }
+                ]
+            };
+
+            const getCities = () => {
+                if (citiesMap[c.iso]) return citiesMap[c.iso];
+                const lat = parseFloat(c.lat);
+                const lng = parseFloat(c.lng);
+                const delta = 1.8;
+                return [
+                    { name: 'Central Region', lat: lat, lng: lng },
+                    { name: 'Northern Region', lat: lat + delta, lng: lng },
+                    { name: 'Southern Region', lat: lat - delta, lng: lng },
+                    { name: 'Eastern Region', lat: lat, lng: lng + delta },
+                    { name: 'Western Region', lat: lat, lng: lng - delta }
+                ];
+            };
+
+            const cities = getCities();
+            const lats = cities.map(city => parseFloat(city.lat).toFixed(4)).join(',');
+            const lngs = cities.map(city => parseFloat(city.lng).toFixed(4)).join(',');
+
+            Promise.all([
+                fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lngs}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide`),
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}&current=temperature_2m`)
+            ]).then(resps => Promise.all(resps.map(r => r.json())))
+              .then(([aqCities, tmpCities]) => {
+                  const aqR = Array.isArray(aqCities) ? aqCities : [aqCities];
+                  const tmpR = Array.isArray(tmpCities) ? tmpCities : [tmpCities];
+
+                  const cityData = cities.map((city, idx) => {
+                      const scores = { pm10: 0, pm2_5: 0, co: 0, no2: 0, temp: 0 };
+                      if (aqR[idx]?.current) {
+                          scores.pm10 = Math.round(aqR[idx].current.pm10 || 0);
+                          scores.pm2_5 = Math.round(aqR[idx].current.pm2_5 || 0);
+                          scores.co = Math.round(aqR[idx].current.carbon_monoxide || 0);
+                          scores.no2 = Math.round(aqR[idx].current.nitrogen_dioxide || 0);
+                      }
+                      if (tmpR[idx]?.current) {
+                          scores.temp = Math.round(tmpR[idx].current.temperature_2m || 0);
+                      }
+                      return { name: city.name, score: scores[curMetric] };
+                  });
+
+                  cityData.sort((a, b) => b.score - a.score);
+                  const highest = cityData[0];
+                  const lowest = cityData[cityData.length - 1];
+
+                  let highLabel = 'HIGHEST';
+                  let lowLabel = 'LOWEST';
+                  let highEmoji = '🔺';
+                  let lowEmoji = '🔻';
+                  let formatExt = (v) => `${v} µg/m³`;
+
+                  if (curMetric === 'temp') {
+                      highLabel = 'HOTTEST';
+                      lowLabel = 'COOLEST';
+                      highEmoji = '🔥';
+                      lowEmoji = '❄️';
+                      formatExt = (v) => `${v}°C`;
+                  }
+
+                  extremesEl.innerHTML = `
+                      <div class="extreme-card high">
+                          <div class="ex-hdr">${highEmoji} ${highLabel}</div>
+                          <div class="ex-name">${highest.name}</div>
+                          <div class="ex-val">${formatExt(highest.score)}</div>
+                      </div>
+                      <div class="extreme-card low">
+                          <div class="ex-hdr">${lowEmoji} ${lowLabel}</div>
+                          <div class="ex-name">${lowest.name}</div>
+                          <div class="ex-val">${formatExt(lowest.score)}</div>
+                      </div>
+                  `;
+              }).catch(err => {
+                  console.error("City batch weather fetch error:", err);
+                  extremesEl.innerHTML = '<div class="detail-error">Failed to query regional metrics.</div>';
+              });
+        }
     }
 
     function closeDetail() {
         document.getElementById('right').classList.remove('active');
         world.controls().autoRotate = true;
     }
+
+    // ═══════════════ LOCATION SEARCH ENGINE ═══════════════
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    let debounceTimer;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        clearTimeout(debounceTimer);
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            // Local client-side search in DATA countries
+            const localMatches = DATA.filter(c => 
+                c.name.toLowerCase().includes(query) || 
+                c.iso.toLowerCase().includes(query)
+            ).slice(0, 5);
+
+            renderSearchResults(localMatches, query);
+
+            // Fallback OSM Nominatim geocoding
+            fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`)
+                .then(r => r.json())
+                .then(data => {
+                    const combined = [...localMatches];
+                    data.forEach(item => {
+                        const lat = parseFloat(item.lat);
+                        const lng = parseFloat(item.lon);
+                        const duplicate = combined.some(c => 
+                            Math.abs(c.lat - lat) < 1.0 && Math.abs(c.lng - lng) < 1.0
+                        );
+                        if (!duplicate) {
+                            combined.push({
+                                name: item.display_name,
+                                iso: 'LOC',
+                                lat: lat,
+                                lng: lng,
+                                isOSM: true
+                            });
+                        }
+                    });
+                    renderSearchResults(combined.slice(0, 7), query);
+                })
+                .catch(err => console.error("Search API error", err));
+        }, 250);
+    });
+
+    function renderSearchResults(results, query) {
+        if (results.length === 0) {
+            searchResults.innerHTML = '<li style="color: var(--text-muted); cursor: default; font-size: 11px; padding: 8px 12px;">No results found</li>';
+            searchResults.style.display = 'block';
+            return;
+        }
+
+        searchResults.innerHTML = '';
+        searchResults.style.display = 'block';
+
+        results.forEach(res => {
+            const li = document.createElement('li');
+            const tag = res.iso === 'LOC' ? '📍' : res.iso;
+            li.innerHTML = `<span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-accent); background: rgba(0, 229, 255, 0.1); padding: 2px 4px; border-radius: 4px; margin-right: 8px;">${tag}</span> ${res.name}`;
+            
+            li.onclick = () => {
+                world.pointOfView({ lat: res.lat, lng: res.lng, altitude: 1.2 }, 1500);
+                if (!res.isOSM) {
+                    setTimeout(() => openDetail(res), 1500);
+                }
+                searchInput.value = '';
+                searchResults.style.display = 'none';
+            };
+            searchResults.appendChild(li);
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
     window.addEventListener('resize', () => {
       const wrap = document.getElementById('globe-wrap');
       world.width(wrap.offsetWidth).height(wrap.offsetHeight);
